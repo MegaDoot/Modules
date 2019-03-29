@@ -1,7 +1,9 @@
+import functools
+
 def dry_create(var_name, *funcs):
     def cls_decorator(cls):
         def cls_wrapper(*args, **kwargs):
-            cls.bar = lambda self: type(self)
+            cls.__add__ = lambda self, other: self.num + other.num
 ##            for func in funcs:
 ##                print(func)
 ##                setattr(cls, func, lambda self, other, func = func: ["Using " + func, getattr(getattr(self, var_name), func)(getattr(other, var_name))])
@@ -10,27 +12,39 @@ def dry_create(var_name, *funcs):
         return cls_wrapper
     return cls_decorator
 
-def add_foo(value = "Hello"):
-    def decorator(cls):
-        def wrapper(*args, **kwargs):
-            cls.foo = value
-            return cls
-        return wrapper
+def repeat(times = 1):
+    def decorator(func):
+        def decorated(*args, **kwargs):
+            for i in range(times):
+                func()
+            return func #Change the function, when func called, instead run decorated
+        return decorated
     return decorator
 
+def add_func(cls):
+    def decorated(*args, **kwargs):
+        print("Editing cls")
+        print("Type:", type(cls))
+        return cls
+    return decorated
+
+@repeat(5)
+def print_thing():
+    print("Hi")
+
+##print_thing()
+
 ##@dry_create("num", "__mul__", "__add__")
-@add_foo("G'day")
+@add_func
 class Derivative(object):
     def __init__(self, num):
         self.num = num
 
 if __name__ == "__main__":
-  import inspect
-##  Derivative = dry_create(Derivative, "num", "__mul__", "__add__")
+##    Derivative = dry_create(Derivative, "num", "__mul__", "__add__")
+##    Derivative = add_funcs(Derivative)
 
-  test1 = Derivative(2)
-  test2 = Derivative(3)
-  print(test1 + test2)
-  print(test1 * test2)
-
-##  print(inspect.getsource(test1.__sub__))
+    test1 = Derivative(2)
+    test2 = Derivative(3)
+##    print(test1 + test2)
+##    print(test1 * test2)
