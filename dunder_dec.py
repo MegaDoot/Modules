@@ -37,15 +37,16 @@ class add_methods(object):
 __all__ = ("add_func",)
 
 if __name__ == "__main__":
-    @add_methods("num", "__add__", "__mul__")
-    @add_methods("array", "__iter__")
+    @add_methods("num", "__add__", "__mul__") #"__add__" -> def __add__(self, other): return self.num + other.num
+    @add_methods("array", "__iter__", "__len__") #"__iter__": def __iter__(self): for i in self.array: yield i
     class Derivative(object):
-        def __init__(self, num):
+        def __init__(self, num, array):
             self.num = num
-            self.array = (1, 2, 3)
+            self.array = array
 
-    test1 = Derivative(2)
-    test2 = Derivative(3)
+    test1 = Derivative(2, (1, 2, 3))
+    test2 = Derivative(3, (1, 3, 3, 7))
     print(test1 + test2)
     print(test1 * test2)
-    print([n for n in test1])
+    print(list(test1))
+    print(len(test2))
