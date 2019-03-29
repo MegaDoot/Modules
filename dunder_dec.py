@@ -12,6 +12,7 @@ class add_func(object):
                 setattr(cls, func, lambda this, other, func = func: getattr(getattr(this, self.var_name), func)(getattr(other, self.var_name)))
                 #i.e. self.num.__add__(other.num)
                 #Note that 'this' is used to distinguish from 'self' defined in the class
+        Decorated.__name__ = cls.__name__
         return Decorated
     
 
