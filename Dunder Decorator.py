@@ -7,12 +7,12 @@ from inspect import signature as sig
 def _find_args(func):
     return len(sig(func).parameters)
 
-def _make_func(this, other, func:str, var_name:str): #__add__, num
+def _make_func(this, other, func:str, var_name:str) -> "function": #__add__, num
     function = getattr(getattr(this, var_name), func) #Retrive function to use dunder method: this.var_name.func
     args_num = _find_args(function) #Number of extra arguments taken (i.e. __add__ would be 1, __iter__ would be 0)
     if args_num == 1: #If binary
         return function(getattr(other, var_name))
-    elif args_num == 0: #If unary
+    elif args_num == 0: #If unary, i.e. len or iter
         return function() #No arguments needed
     else:
         raise DunderArgsError("Accepting only 1 or 2 arguments") #As far as know they all accept 1 or 2
@@ -21,7 +21,7 @@ class DunderArgsError(TypeError): #Custom exception
     pass
 
 class add_methods(object):
-    def __init__(self, var_name, *funcs):
+    def __init__(self, var_name:str, *funcs:str):
         self.var_name = var_name
         self.funcs = funcs
     
