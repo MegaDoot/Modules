@@ -1,50 +1,27 @@
 import functools
 
-def dry_create(var_name, *funcs):
-    def cls_decorator(cls):
-        def cls_wrapper(*args, **kwargs):
-            cls.__add__ = lambda self, other: self.num + other.num
-##            for func in funcs:
-##                print(func)
-##                setattr(cls, func, lambda self, other, func = func: ["Using " + func, getattr(getattr(self, var_name), func)(getattr(other, var_name))])
+class add_func(object):
+    def __init__(self, var_name, *funcs):
+        self.var_name = var_name
+        self.funcs = funcs
+    
+    def __call__(self, cls):
+        class Decorated(cls):
+            for func in self.funcs:
+                print(func)
+                setattr(cls, func, lambda this, other, func = func: getattr(getattr(this, self.var_name), func)(getattr(other, self.var_name)))
                 #i.e. self.num.__add__(other.num)
-            return cls
-        return cls_wrapper
-    return cls_decorator
+                #Note that 'this' is used to distinguish from 'self' defined in the class
+        return Decorated
+    
 
-def repeat(times = 1):
-    def decorator(func):
-        def decorated(*args, **kwargs):
-            for i in range(times):
-                func()
-            return func #Change the function, when func called, instead run decorated
-        return decorated
-    return decorator
-
-def add_func(cls):
-    def decorated(*args, **kwargs):
-        print("Editing cls")
-        print("Type:", type(cls))
-        return cls
-    return decorated
-
-@repeat(5)
-def print_thing():
-    print("Hi")
-
-##print_thing()
-
-##@dry_create("num", "__mul__", "__add__")
-@add_func
+@add_func("num", "__add__", "__mul__")
 class Derivative(object):
     def __init__(self, num):
         self.num = num
 
 if __name__ == "__main__":
-##    Derivative = dry_create(Derivative, "num", "__mul__", "__add__")
-##    Derivative = add_funcs(Derivative)
-
     test1 = Derivative(2)
     test2 = Derivative(3)
-##    print(test1 + test2)
-##    print(test1 * test2)
+    print(test1 + test2)
+    print(test1 * test2)
