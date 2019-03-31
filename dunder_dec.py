@@ -4,24 +4,24 @@ Alex Scorza 2019
 
 from inspect import signature as sig
 
+__all__ = ("add_func",)
+
 SPECIAL = {"__getitem__": (False,), "__setitem__": (False, False)}
 #False: use value, True: use getattr(, var_name)
 
-def _dunders(obj):
+def _dunders(obj): #Lists all dunder methods of an object
     return tuple(filter(lambda func: func.startswith("__") and func.endswith("__"), dir(obj)))
 
 def _mapper(this, func, var_name, *others):
-    true_false = SPECIAL.get(func, (True,))
-    print(true_false, len(true_false))
-    arg_amount = _find_args(getattr(getattr(this, var_name), func))
-    if len(true_false) != arg_amount:
+    true_false = SPECIAL.get(func, (True,)) #Defaults to (True,) if not special
+    arg_amount = _find_args(getattr(getattr(this, var_name), func)) #Number of arguments expected
+    if len(true_false) < arg_amount: #If too few amount entered (ignores extra arguments)
         if func in SPECIAL.keys():
             raise DunderArgsError("Wrong number of values for {}, expected {}, got {} -> {}".format(func, arg_amount, len(true_false), others))
         else:
             raise NotImplementedError("Special magic method {} not recognised as special: {} (author's fault)".format(func, tuple(SPECIAL.keys())))
     args = []
     for i in range(len(others)):
-        print(true_false[i])
         if true_false[i]: #== True
             args.append(getattr(others[i], var_name)) #i.e. CustomClass.num
         else:
@@ -30,24 +30,21 @@ def _mapper(this, func, var_name, *others):
     
 
 def _find_args(func):
-    return len(sig(func).parameters)
+    try:
+        return len(sig(func).parameters)
+    except ValueError:
+        raise NoSignatureError("Function '{}' does not have a signature so the number of arguments required is not known".format(func))
 
-def _make_func(this, other, func:str, var_name:str) -> "function": #__add__, num
-##    print("func, var_name:", func, var_name)
+def _make_func(this, func:str, var_name:str, *others) -> "function": #__add__, num
     function = getattr(getattr(this, var_name), func) #Retrive function to use dunder method: this.var_name.func
     args_num = _find_args(function) #Number of extra arguments taken (i.e. __add__ would be 1, __iter__ would be 0)
-    if func in SPECIAL.keys(): #If args are not all the same type
-        mapped = _mapper(this, func, var_name, other)
-        return function(*mapped)
-    else:
-        if args_num == 1: #If binary
-            return function(getattr(other, var_name))
-        elif args_num == 0: #If unary, i.e. len or iter
-            return function() #No arguments needed
-        else:
-            raise DunderArgsError("Accepting only 1 or 2 arguments") #As far as know they all accept 1 or 2
+    mapped = _mapper(this, func, var_name, *others)
+    return function(*mapped)
 
 class DunderArgsError(TypeError): #Custom exception
+    pass
+
+class NoSignatureError(ValueError):
     pass
 
 class add_methods(object):
@@ -58,17 +55,15 @@ class add_methods(object):
     def __call__(self, cls):
         class Decorated(cls):
             for func in self.funcs:
-                setattr(cls, func, lambda this, other = None, func = func: _make_func(this, other, func, self.var_name))
+                setattr(cls, func, lambda this, *others, func = func: _make_func(this, func, self.var_name, *others))
                 #i.e. self.num.__add__(other.num)
                 #Note that 'this' is used to distinguish from 'self' defined in the class
         Decorated.__name__ = cls.__name__
         return Decorated
 
-__all__ = ("add_func",)
-
 if __name__ == "__main__":
     @add_methods("num", "__add__", "__mul__") #"__add__" -> def __add__(self, other): return self.num + other.num
-    @add_methods("array", "__iter__", "__len__") #"__iter__": def __iter__(self): for i in self.array: yield i
+    @add_methods("array", "__setitem__", "__iter__", "__len__", "__setitem__") #"__iter__": def __iter__(self): for i in self.array: yield i
     @add_methods("string", "__getitem__")
     class Derivative(object):
         def __init__(self, num, array, string):
@@ -81,6 +76,7 @@ if __name__ == "__main__":
     print(test1 + test2)
     print(test1 * test2)
     print(len(test2))
-    print(list(test1))
-    print(test1.__getitem__(0))
-##    print(_mapper(test1, "__setitem__", "array", 0, 100))
+    print(test2[-1])
+    print("Before:", list(test1))
+    test1.__setitem__(0, 100)
+    print("After:", list(test1))
