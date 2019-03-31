@@ -12,7 +12,6 @@ def _dunders(obj):
 
 def _mapper(this, func, var_name, *others):
     true_false = SPECIAL.get(func, (True,))
-    print(true_false, len(true_false))
     arg_amount = _find_args(getattr(getattr(this, var_name), func))
     if len(true_false) != arg_amount:
         if func in SPECIAL.keys():
