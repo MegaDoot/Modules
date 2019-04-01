@@ -9,10 +9,13 @@ __all__ = ("add_func",)
 SPECIAL = {"__getitem__": (False,), "__setitem__": (False, False)}
 #False: use value, True: use getattr(, var_name)
 
+binary_operations = ("__add__", "__mul__", "____")
+
 def _dunders(obj): #Lists all dunder methods of an object
     return tuple(filter(lambda func: func.startswith("__") and func.endswith("__"), dir(obj)))
 
 def _mapper(this, func, var_name, *others):
+    right_same = func[2]
     true_false = SPECIAL.get(func, (True,)) #Defaults to (True,) if not special
     arg_amount = _find_args(getattr(getattr(this, var_name), func)) #Number of arguments expected
     if len(true_false) < arg_amount: #If too few amount entered (ignores extra arguments)
@@ -34,7 +37,7 @@ def _find_args(func):
         return len(sig(func).parameters)
     except ValueError:
         raise NoSignatureError("Function '{}' does not have a signature so the number of arguments required is not known".format(func))
-
+  
 def _make_func(this, func:str, var_name:str, *others) -> "function": #__add__, num
     function = getattr(getattr(this, var_name), func) #Retrive function to use dunder method: this.var_name.func
     args_num = _find_args(function) #Number of extra arguments taken (i.e. __add__ would be 1, __iter__ would be 0)
@@ -48,9 +51,10 @@ class NoSignatureError(ValueError):
     pass
 
 class add_methods(object):
-    def __init__(self, var_name:str, *funcs:str):
+    def __init__(self, var_name:str, *funcs:str, wrapper = lambda value: value):
         self.var_name = var_name
         self.funcs = funcs
+        self.wrapper = wrapper
     
     def __call__(self, cls):
         class Decorated(cls):
