@@ -13,9 +13,15 @@ def _dunders(obj): #Lists all dunder methods of an object
     return tuple(filter(lambda func: func.startswith("__") and func.endswith("__"), dir(obj)))
 
 def _mapper(this, func, var_name, *others):
+<<<<<<< HEAD
     true_false = SPECIAL.get(func, (True,)) #Defaults to (True,) if not special
     arg_amount = _find_args(getattr(getattr(this, var_name), func)) #Number of arguments expected
     if len(true_false) < arg_amount: #If too few amount entered (ignores extra arguments)
+=======
+    true_false = SPECIAL.get(func, (True,))
+    arg_amount = _find_args(getattr(getattr(this, var_name), func))
+    if len(true_false) != arg_amount:
+>>>>>>> 2863c5503012279988d8402265d5cd2cd991db8b
         if func in SPECIAL.keys():
             raise DunderArgsError("Wrong number of values for {}, expected {}, got {} -> {}".format(func, arg_amount, len(true_false), others))
         else:
