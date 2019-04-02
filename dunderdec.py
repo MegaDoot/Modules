@@ -1,8 +1,8 @@
 """
 Alex Scorza 2019
+Plz don't steal
 
 Documentation:
-
 Add a decorator before the function -
 
 (Code Example 1)
