@@ -1,5 +1,56 @@
 """
 Alex Scorza 2019
+
+Documentation:
+
+Add a decorator before the function -
+
+(Code Example 1)
+-----------
+    @dunderdec.add_func(lambda obj: obj.num, "__add__", "__sub__", wrapper = float)
+    class Foo:
+        def __init__(self):
+            self.num = 5
+-----------
+
+This gets the class and adds each of the specified magic methods. An unlimited amount is allowed
+The lambda at the starts specifies which attribute of the class to get. However, in this case,
+' lambda obj: obj.num ' can be changed to ' "num" ' and will be converted to a function automatically:
+    ' @dunderdec.add_func("num", "__add__", "__sub__", wrapper = float) '
+
+
+
+The wrapper is the function that is done on the return value of a function.
+
+(Code Example 2)
+-----------
+    @dunderdec.add_func(lambda obj: int(obj.num), "__add__", "__mul__", "__sub__", wrapper = str)
+    class Foo:
+        def __init__(self):
+            self.num = "5"
+-----------
+
+Here, the value of num is always a string so it is converted to an integer, the calculations are done
+and the result is converted back into a string, so "5" + "6" would become "11" in this case, despite
+being strings. A lambda must be used in this case as a function, ' int ', is done on the values. 
+
+The equivalent of the code above/code example 2 done normally:
+-----------
+    class Foo:
+        def __init__(self):
+            self.num = "5"
+
+        def __add__(self, other):
+            return str(int(self.num) + int(self.other))
+
+        def __mul__(self, other):
+            return str(int(self.num) * int(self.other))
+
+        def __sub__(self, other):
+            return str(int(self.num) - int(self.other))
+-----------
+
+The more dunder methods used, the more concise and 'dry' the code becomes.
 """
 
 from inspect import signature as sig
@@ -9,8 +60,8 @@ __all__ = ("add_func", "BIN_OPERS", "IBIN_OPERS")
 SPECIAL = {"__getitem__": (False,), "__setitem__": (False, False)}
 #False: use value, True: use getattr(, variable name)
 
-BIN_OPERS = ("__add__", "__mul__", "__div__", "__truediv__", "__sub__", "__pow__")
-IBIN_OPERS = tuple(map(lambda func: "__i" + func[2:], binary_opers))
+BIN_OPERS = ("__add__", "__mul__", "__div__", "__truediv__", "__sub__")
+IBIN_OPERS = tuple(map(lambda func: "__i" + func[2:], BIN_OPERS))
 
 def _dunders(obj): #Lists all dunder methods of an object
     return tuple(filter(lambda func: func.startswith("__") and func.endswith("__"), dir(obj)))
@@ -39,7 +90,7 @@ def _find_args(func):
     except ValueError:
         raise NoSignatureError("Function '{}' does not have a signature so the number of arguments required is not known".format(func))
   
-def _make_func(this, func:str, var_func, wrapper, *others) -> "function": #__add__, num
+def _make_func(this, func:str, var_func, wrapper, *others): #__add__, num
     function = getattr(var_func(this), func)
     args_num = _find_args(function) #Number of extra arguments taken (i.e. __add__ would be 1, __iter__ would be 0)
     mapped = _mapper(this, func, var_func, *others)
@@ -53,6 +104,8 @@ class NoSignatureError(ValueError):
 
 class add_methods(object):
     def __init__(self, var_func, *funcs:str, wrapper = lambda value: value):
+        if type(var_func) == str: #i.e. "num" to obj.num
+            var_func = lambda obj: getattr(obj, var_func)
         self.var_func = var_func #Can be string or function
         self.funcs = funcs
         self.wrapper = wrapper
@@ -67,7 +120,7 @@ class add_methods(object):
         return Decorated
 
 if __name__ == "__main__":
-    @add_methods(lambda obj: obj.num, "__add__", "__mul__", wrapper = float) #"__add__" -> def __add__(self, other): return self.num + other.num
+    @add_methods(lambda obj: int(obj.num), "__add__", "__mul__", wrapper = str) #"__add__" -> def __add__(self, other): return self.num + other.num
     @add_methods(lambda obj: obj.array, "__setitem__", "__iter__", "__len__", "__setitem__") #"__iter__": def __iter__(self): for i in self.array: yield i
     @add_methods(lambda obj: obj.string, "__getitem__")
     class Derivative(object):
@@ -76,8 +129,8 @@ if __name__ == "__main__":
             self.array = array
             self.string = string
 
-    test1 = Derivative(2, [1, 2, 3], "hello")
-    test2 = Derivative(3, [1, 3, 3, 7], "hi")
+    test1 = Derivative("2", [1, 2, 3], "hello")
+    test2 = Derivative("3", [1, 3, 3, 7], "hi")
     print(test1 + test2)
     print(test1 * test2)
     print(len(test2))
