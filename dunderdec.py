@@ -16,13 +16,18 @@ Add a decorator before the function -
 This gets the class and adds each of the specified magic methods. An unlimited amount is allowed
 The lambda at the starts specifies which attribute of the class to get. However, in this case,
 ' lambda obj: obj.num ' can be changed to ' "num" ' and will be converted to a function automatically:
-    ' @dunderdec.add_func("num", "__add__", "__sub__", wrapper = float) '
 
-
+(Code Example 2)
+-----------
+    @dunderdec.add_func("num", "__add__", "__sub__", wrapper = float)
+    class Foo:
+        def __init__(self):
+            self.num = 5
+-----------
 
 The wrapper is the function that is done on the return value of a function.
 
-(Code Example 2)
+(Code Example 3)
 -----------
     @dunderdec.add_func(lambda obj: int(obj.num), "__add__", "__mul__", "__sub__", wrapper = str)
     class Foo:
@@ -34,7 +39,7 @@ Here, the value of num is always a string so it is converted to an integer, the 
 and the result is converted back into a string, so "5" + "6" would become "11" in this case, despite
 being strings. A lambda must be used in this case as a function, ' int ', is done on the values. 
 
-The equivalent of the code above/code example 2 done normally:
+The equivalent of the code above/code example 3 done normally:
 -----------
     class Foo:
         def __init__(self):
