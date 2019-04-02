@@ -109,10 +109,12 @@ def from_ten(num,base): #Returns string as there may be letters
         values += [num//(base**x)] #Integer division and carry the remainder
         num %= base**x #Becomes remainder
     return "".join(chars[x] for x in values) #'chars[x]' not 'int(x)' in case of letter
-a = Base("-f3",16) #-243
-b = Base("-10101",2) #-21
-c = Base(a-b) #Defauts to base 10
-print(c.num)
-c /= Base("2")
-print(c.num)
-print(Base("f",16) == Base("15",10))
+
+if __name__ == "__main__":
+    a = Base("-f3",16) #-243
+    b = Base("-10101",2) #-21
+    c = Base(a-b) #Defauts to base 10
+    print(c.num)
+    c /= Base("2")
+    print(c.num)
+    print(Base("f",16) == Base("15",10))
