@@ -4,13 +4,13 @@ Alex Scorza 2019
 
 from inspect import signature as sig
 
-__all__ = ("add_func",)
+__all__ = ("add_func", "BIN_OPERS", "IBIN_OPERS")
 
 SPECIAL = {"__getitem__": (False,), "__setitem__": (False, False)}
 #False: use value, True: use getattr(, variable name)
 
-binary_opers = ("__add__", "__mul__", "__div__", "__truediv__", "__sub__", "__pow__")
-ibinary_opers = tuple(map(lambda func: "__i" + func[2:], binary_opers))
+BIN_OPERS = ("__add__", "__mul__", "__div__", "__truediv__", "__sub__", "__pow__")
+IBIN_OPERS = tuple(map(lambda func: "__i" + func[2:], binary_opers))
 
 def _dunders(obj): #Lists all dunder methods of an object
     return tuple(filter(lambda func: func.startswith("__") and func.endswith("__"), dir(obj)))
