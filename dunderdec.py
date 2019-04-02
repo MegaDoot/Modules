@@ -29,7 +29,7 @@ The wrapper is the function that is done on the return value of a function.
 
 (Code Example 3)
 -----------
-    @dunderdec.add_func(lambda obj: int(obj.num), "__add__", "__mul__", "__sub__", wrapper = str)
+    @dunderdec.add_func(lambda obj: int(obj.num), "__add__", "__mul__", "__sub__", "__floordiv__", wrapper = str)
     class Foo:
         def __init__(self):
             self.num = "5"
@@ -41,18 +41,21 @@ being strings. A lambda must be used in this case as a function, ' int ', is don
 
 The equivalent of the code above/code example 3 done normally:
 -----------
-    class Foo:
-        def __init__(self):
-            self.num = "5"
-
-        def __add__(self, other):
-            return str(int(self.num) + int(self.other))
-
-        def __mul__(self, other):
-            return str(int(self.num) * int(self.other))
-
-        def __sub__(self, other):
-            return str(int(self.num) - int(self.other))
+class Foo:
+    def __init__(self):
+        self.num = "5"
+        
+    def __add__(self, other):
+        return str(int(self.num) + int(other.num))
+        
+    def __mul__(self, other):
+        return str(int(self.num) * int(other.num))
+        
+    def __sub__(self, other):
+        return str(int(self.num) - int(other.num))
+        
+    def __floordiv__(self, other):
+        return str(int(self.num) // int(other.num))
 -----------
 
 The more dunder methods used, the more concise and 'dry' the code becomes.
