@@ -76,41 +76,43 @@ def _dunders(obj): #Lists all dunder methods of an object
 
 def _mapper(this, func, var_func, *others):
     true_false = SPECIAL.get(func, (True,)) #Defaults to (True,) if not special
-    function = getattr(var_func(this), func)
+    #For each boolean in the list, True: Use the specified attribute of the class, False: Use the value outright
+    function = getattr(var_func(this), func) #Gets magic method, i.e. num.__add__
     arg_amount = _find_args(function) #Number of arguments expected
     if len(true_false) < arg_amount: #If too few amount entered (ignores extra arguments)
-        if func in SPECIAL.keys():
+        if func in SPECIAL.keys(): #If it's a special snowflake with arguments other than: [The Same Type], the case for most arithmetic methods
             raise DunderArgsError("Wrong number of values for {}, expected {}, got {} -> {}".format(func, arg_amount, len(true_false), others))
         else:
             raise NotImplementedError("Special magic method {} not recognised as special: {} (author's fault)".format(func, tuple(SPECIAL.keys())))
-    args = []
+    args = [] #Mutable so items can be appended
     for i in range(len(others)):
-        if true_false[i]: #== True
+        if true_false[i]: #== True, meaning takes the same object as the object the calculations are done on
             args.append(var_func(others[i])) #i.e. CustomClass.num
         else:
             args.append(others[i]) #i.e. 5
-    return tuple(args)
+    return tuple(args) #No longer needs to be changed, therefore tuple
     
 
-def _find_args(func):
+def _find_args(func): #Number of arguments required. Note that extra arguments are ignored, like JavaScript
     try:
-        return len(sig(func).parameters)
-    except ValueError:
+        return len(sig(func).parameters) #sig: inspect.signature
+    except ValueError: #Could not find a signtature - invalid
         raise NoSignatureError("Function '{}' does not have a signature so the number of arguments required is not known".format(func))
   
 def _make_func(this, func:str, var_func, wrapper, *others): #__add__, num
-    function = getattr(var_func(this), func)
+    function = getattr(var_func(this), func) #Get the magic method of the data type of the number calculations are done on, i.e. int.__sub__
     args_num = _find_args(function) #Number of extra arguments taken (i.e. __add__ would be 1, __iter__ would be 0)
     mapped = _mapper(this, func, var_func, *others)
-    return wrapper(function(*mapped))
+    #Gets values, either an attribute of 'this', i.e. 'this.num' or a value, i.e. "Hello World"
+    return wrapper(function(*mapped)) #function: do the calculation, wrapper: apply a function to the value returned
 
 class DunderArgsError(TypeError): #Custom exception
     pass
 
-class NoSignatureError(ValueError):
+class NoSignatureError(ValueError): #Custom exception
     pass
 
-class add_methods(object):
+class add_methods(object): #The decorator
     def __init__(self, var_func, *funcs:str, wrapper = lambda value: value):
         if type(var_func) == str: #i.e. "num" to obj.num
             var_func = lambda obj: getattr(obj, var_func)
@@ -119,18 +121,19 @@ class add_methods(object):
         self.wrapper = wrapper
     
     def __call__(self, cls):
-        class Decorated(cls):
-            for func in self.funcs:
+        class Decorated(cls): #Temporary decorated class that contains all of the
+            for func in self.funcs: #func is a string
                 setattr(cls, func, lambda this, *others, func = func: _make_func(this, func, self.var_func, self.wrapper, *others))
                 #i.e. self.num.__add__(other.num)
                 #Note that 'this' is used to distinguish from 'self' defined in the class
-        Decorated.__name__ = cls.__name__
-        return Decorated
+        Decorated.__name__ = cls.__name__ #Otherwise, lots of obfuscated and probably useless information
+        return Decorated #Turn the class into the decorated class
 
 if __name__ == "__main__":
+    #Example below, see documentation at top for information
     @add_methods(lambda obj: int(obj.num), "__add__", "__mul__", wrapper = str) #"__add__" -> def __add__(self, other): return self.num + other.num
-    @add_methods(lambda obj: obj.array, "__setitem__", "__iter__", "__len__", "__setitem__") #"__iter__": def __iter__(self): for i in self.array: yield i
-    @add_methods(lambda obj: obj.string, "__getitem__")
+    @add_methods("array", "__setitem__", "__iter__", "__len__", "__setitem__") #"__iter__": def __iter__(self): for i in self.array: yield i
+    @add_methods("string", "__getitem__")
     class Derivative(object):
         def __init__(self, num, array, string):
             self.num = num
