@@ -1,11 +1,12 @@
 """
 Alex Scorza 2019
 Plz don't steal
+
 Documentation:
 Add a decorator before the function -
 (Code Example 1)
 -----------
-    @dunderdec.add_func(lambda obj: obj.num, "__add__", "__sub__", wrapper = float)
+    @dunderdec.add_func(lambda obj: {[ type(obj) ]: obj.num}, "__add__", "__sub__", wrapper = float)
     class Foo:
         def __init__(self):
             self.num = 5
@@ -23,7 +24,7 @@ The lambda at the starts specifies which attribute of the class to get. However,
 The wrapper is the function that is done on the return value of a function.
 (Code Example 3)
 -----------
-    @dunderdec.add_func(lambda obj: int(obj.num), "__add__", "__mul__", "__sub__", "__floordiv__", wrapper = str)
+    @dunderdec.add_func(lambda obj: {[ type(obj) ]: int(obj.num)}, "__add__", "__mul__", "__sub__", "__floordiv__", wrapper = str)
     class Foo:
         def __init__(self):
             self.num = "5"
@@ -71,11 +72,10 @@ def _mkdict(dict_, key):
 def _dunders(obj): #Lists all dunder methods of an object
     return tuple(filter(lambda func: func.startswith("__") and func.endswith("__"), dir(obj)))
 
-def _mapper(this, func, var_func, *others):
+def _mapper(this, func:str, magic_method, var_func, *others):
     true_false = SPECIAL.get(func, (True,)) #Defaults to (True,) if not special
     #For each boolean in the list, True: Use the specified attribute of the class, False: Use the value outright
-    function = getattr(var_func(this), func) #Gets magic method, i.e. num.__add__
-    arg_amount = _find_args(function) #Number of arguments expected
+    arg_amount = _find_args(magic_method) #Number of arguments expected
     if len(true_false) < arg_amount: #If too few amount entered (ignores extra arguments)
         if func in SPECIAL.keys(): #If it's a special snowflake with arguments other than: [The Same Type], the case for most arithmetic methods
             raise DunderArgsError("Wrong number of values for {}, expected {}, got {} -> {}".format(func, arg_amount, len(true_false), others))
@@ -84,7 +84,8 @@ def _mapper(this, func, var_func, *others):
     args = [] #Mutable so items can be appended
     for i in range(len(others)):
         if true_false[i]: #== True, meaning takes the same object as the object the calculations are done on
-            args.append(var_func(others[i])) #i.e. CustomClass.num
+            funcified = _mkdict(var_func(others[i]), type(others[i])) #Get the specific value set by dict lambda var_func
+            args.append(funcified) #i.e. CustomClass.num
         else:
             args.append(others[i]) #i.e. 5
     return tuple(args) #No longer needs to be changed, therefore tuple
@@ -96,13 +97,11 @@ def _find_args(func): #Number of arguments required. Note that extra arguments a
     except ValueError: #Could not find a signtature - invalid
         raise NoSignatureError("Function '{}' does not have a signature so the number of arguments required is not known".format(func))
   
-def _make_func(this, func:str, var_func, wrapper, *others): #__add__, num
-    print(_mkdict(var_func(this), type(this)))
-    function = getattr(var_func(this), func) #Get the magic method of the data type of the number calculations are done on, i.e. int.__sub__
-    args_num = _find_args(function) #Number of extra arguments taken (i.e. __add__ would be 1, __iter__ would be 0)
-    mapped = _mapper(this, func, var_func, *others)
+def _make_func(this, func:str, var_func, wrapper, *others): #var_func = original function
+    magic_method = getattr(_mkdict(var_func(this), type(this)), func) #Function for data type of original class/self
+    mapped = _mapper(this, func, magic_method, var_func, *others)
     #Gets values, either an attribute of 'this', i.e. 'this.num' or a value, i.e. "Hello World"
-    return wrapper(function(*mapped)) #function: do the calculation, wrapper: apply a function to the value returned
+    return wrapper(magic_method(*mapped)) #function: do the calculation, wrapper: apply a function to the value returned
 
 class DunderArgsError(TypeError): #Custom exception
     pass
@@ -112,7 +111,7 @@ class NoSignatureError(ValueError): #Custom exception
 
 class add_methods(object): #The decorator
     def __init__(self, var_func, *funcs:str, wrapper = lambda value: value):
-        if type(var_func) == str: #i.e. "num" to obj.num
+        if type(var_func) == str: #i.e. "num"
             self.var_func = lambda obj: {(type(obj),): getattr(obj, var_func)}
         else:
             self.var_func = var_func #Can be string or function
@@ -130,18 +129,18 @@ class add_methods(object): #The decorator
 
 if __name__ == "__main__":
     #Example below, see documentation at top for information
-    @add_methods(lambda obj: {(type(obj),): int(obj.num)}, "__add__", "__mul__", wrapper = str) #"__add__" -> def __add__(self, other): return self.num + other.num
-    @add_methods("array", "__setitem__", "__iter__", "__len__", "__setitem__") #"__iter__": def __iter__(self): for i in self.array: yield i
-    @add_methods("string", "__getitem__")
+    @add_methods(lambda obj: {(type(obj),): int(obj.num), (int, float): obj}, "__add__", "__mul__", wrapper = str) #"__add__" -> def __add__(self, other): return self.num + other.num
+    @add_methods(lambda obj: {(type(obj),): obj.array}, "__setitem__", "__iter__", "__len__") #"__iter__": def __iter__(self): for i in self.array: yield i
+    @add_methods(lambda obj: {(type(obj),): obj.string}, "__getitem__")
     class Derivative(object):
         def __init__(self, num, array, string):
             self.num = num
             self.array = array
             self.string = string
 
-    test1 = Derivative("2", [1, 2, 3], "hello")
-    test2 = Derivative("3", [1, 3, 3, 7], "hi")
-    print(repr(test1 + test2))
+    test1 = Derivative("3", [1, 2, 3], "hello")
+    test2 = Derivative("4", [1, 3, 3, 7], "hi")
+    print(repr(test1 + 5))
     print(repr(test1 * test2))
     print(len(test2))
     print(repr(test2[-1]))
