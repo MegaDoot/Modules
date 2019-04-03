@@ -1,7 +1,6 @@
 """
 Alex Scorza 2019
 Plz don't steal
-
 Documentation:
 Add a decorator before the function -
 (Code Example 1)
@@ -83,11 +82,11 @@ def _mapper(this, func:str, magic_method, var_func, *others):
             raise NotImplementedError("Special magic method {} not recognised as special: {} (author's fault)".format(func, tuple(SPECIAL.keys())))
     args = [] #Mutable so items can be appended
     for i in range(len(others)):
-        if true_false[i]: #== True, meaning takes the same object as the object the calculations are done on
-            funcified = _mkdict(var_func(others[i]), type(others[i])) #Get the specific value set by dict lambda var_func
-            args.append(funcified) #i.e. CustomClass.num
-        else:
-            args.append(others[i]) #i.e. 5
+        print(others[i])
+        var_dict = var_func(others[i])
+        print(var_dict)
+        funcified = _mkdict(var_dict, type(others[i])) #Get the specific value set by dict lambda var_func
+        args.append(funcified) #i.e. CustomClass.num
     return tuple(args) #No longer needs to be changed, therefore tuple
     
 
