@@ -13,7 +13,7 @@ def size(a):
     return sqrt(sum(val**2 for val in a))
 
 def angle(a):
-    return atan(a.x/a.y)
+    return atan(a[0]/a[1])
 
 def _vectorise_binary(func):
     def new_func(a, b):
