@@ -53,8 +53,9 @@ The more dunder methods used, the more concise and 'dry' the code becomes.
 """
 
 from inspect import signature as sig
+import tokenise as tkn
 
-__all__ = ("add_func", "BIN_OPERS", "IBIN_OPERS")
+__all__ = ("add_methods", "BIN_OPERS", "IBIN_OPERS")
 
 SPECIAL = {"__getitem__": (False,), "__setitem__": (False, False)}
 #False: use value, True: use getattr(, variable name)
@@ -102,6 +103,11 @@ def _make_func(this, func:str, var_func, wrapper, *others): #var_func = original
     #Gets values, either an attribute of 'this', i.e. 'this.num' or a value, i.e. "Hello World"
     return wrapper(magic_method(*mapped)) #function: do the calculation, wrapper: apply a function to the value returned
 
+def make_func(this, func, evaluator, wrapper, *args):
+    def foo(this, other):
+        print(this.num + evaluator(other))
+    return foo
+
 class DunderArgsError(TypeError): #Custom exception
     pass
 
@@ -109,18 +115,18 @@ class NoSignatureError(ValueError): #Custom exception
     pass
 
 class add_methods(object): #The decorator
-    def __init__(self, var_func, *funcs:str, wrapper = lambda value: value):
-        if type(var_func) == str: #i.e. "num"
-            self.var_func = lambda obj: {(type(obj),): getattr(obj, var_func)}
-        else:
-            self.var_func = var_func #Can be string or function
+    def __init__(self, syntax, *funcs:str, wrapper = lambda value: value):
+        self.func_dict = tkn.unpack(tkn.tokenise(syntax))
+        print(self.func_dict)
         self.funcs = funcs
         self.wrapper = wrapper
     
     def __call__(self, cls):
+        evaluator = lambda obj: tkn.run(self.func_dict, obj)
         class Decorated(cls): #Temporary decorated class that contains all of the
             for func in self.funcs: #func is a string
-                setattr(cls, func, lambda this, *others, func = func: _make_func(this, func, self.var_func, self.wrapper, *others))
+                setattr(cls, func, lambda this, *args, func = func: make_func(this, func, evaluator, self.wrapper, *args))
+##                setattr(cls, func, lambda this, *others, func = func: _make_func(this, func, self.var_func, self.wrapper, *others))
                 #i.e. self.num.__add__(other.num)
                 #Note that 'this' is used to distinguish from 'self' defined in the class
         Decorated.__name__ = cls.__name__ #Otherwise, lots of obfuscated and probably useless information
@@ -128,9 +134,9 @@ class add_methods(object): #The decorator
 
 if __name__ == "__main__":
     #Example below, see documentation at top for information
-    @add_methods(lambda obj: {(type(obj),): int(obj.num), (int, float): obj}, "__add__", "__mul__", wrapper = str) #"__add__" -> def __add__(self, other): return self.num + other.num
-    @add_methods(lambda obj: {(type(obj),): obj.array}, "__setitem__", "__iter__", "__len__") #"__iter__": def __iter__(self): for i in self.array: yield i
-    @add_methods(lambda obj: {(type(obj),): obj.string}, "__getitem__")
+    @add_methods("int, float: obj", "__add__", wrapper = str)
+##    @add_methods(lambda obj: {(type(obj),): obj.array}, "__setitem__", "__iter__", "__len__")
+##    @add_methods(lambda obj: {(type(obj),): obj.string}, "__getitem__")
     class Derivative(object):
         def __init__(self, num, array, string):
             self.num = num
@@ -140,9 +146,10 @@ if __name__ == "__main__":
     test1 = Derivative("3", [1, 2, 3], "hello")
     test2 = Derivative("4", [1, 3, 3, 7], "hi")
     print(repr(test1 + 5))
-    print(repr(test1 * test2))
-    print(len(test2))
-    print(repr(test2[-1]))
-    print("Before:", list(test1))
-    test1[0] = 100
-    print("After:", list(test1))
+    print(repr(test1 + test2))
+##    print(repr(test1 * test2))
+##    print(len(test2))
+##    print(repr(test2[-1]))
+##    print("Before:", list(test1))
+##    test1[0] = 100
+##    print("After:", list(test1))
