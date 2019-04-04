@@ -32,9 +32,7 @@ def tokenise(string):
 ##        parts.append(found[0] if len(found) == 1 else "")
 ##        string = string[len(parts[-1]):]
 ##    print(parts)
-    print(string)
     not_quoted = out_quotes(string) #Remove all text in quotation marks and apostrophes
-    print(not_quoted)
     stripped = "" #Spaces removed
     for i in range(len(string)):
         if string[i] == " ":
@@ -45,7 +43,6 @@ def tokenise(string):
     string = stripped
 
     separated = split_with(string, ";")
-    print(separated)
     for i in range(len(separated)):
         separated[i] = split_with(separated[i], ":")
         separated[i][0] = list(split_with(separated[i][0], ","))
@@ -53,9 +50,7 @@ def tokenise(string):
 
 def method(multi_key_dict, obj, key):
     type_ = type(obj)
-    print(type_)
     for k_tuple in multi_key_dict.keys():
-        print(k_tuple)
         evaluated = tuple(map(eval, k_tuple))
         if type_ in evaluated:
             return multi_key_dict[k_tuple]
@@ -70,31 +65,24 @@ def out_quotes(string):
     outside = [i for i in range(len(string)) if not i in inside]
     return outside
 
-def evaluate(tokens):
+def unpack(tokens):
         individual = {}
         for i in range(len(tokens)):
             for x in range(len(tokens[i][0])):
-                individual[eval(tokens[i][0][x])] = tokens[i][1]
+                individual[tokens[i][0][x]] = tokens[i][1]
         return individual
 
 def run(dict_, obj):
-    return eval(dict_[type(obj)])
+    for k, v in dict_.items():
+        if eval(k) == type(obj):
+            return eval(v)
 
 if __name__ == "__main__":
-    split = tokenise('Foo: obj.num; int, float: obj; str: "You are: "  + obj')
-    print(split)
-    def evaluate(split):
-        individual = {}
-        for i in range(len(split)):
-            for x in range(len(split[i][0])):
-                individual[eval(split[i][0][x])] = split[i][1]
-        return individual
+    split = unpack(tokenise('Foo: obj.num; int, float: obj; str: "You are: "  + obj'))
     class Foo:
         def __init__(self):
             self.num = 10
     
     foo = Foo()
-    split = evaluate(split)
     print(split)
     print(run(split, foo))
-    
