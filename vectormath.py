@@ -6,6 +6,9 @@ atan = lambda x: degrees(atanr(x))
 def from_polar(size, angle):
     return [sin(angle) * size, cos(angle) * size]
 
+def to_polar(a):
+    return {"size": size(a), "angle": angle(a)}
+
 def size(a):
     return sqrt(sum(val**2 for val in a))
 
