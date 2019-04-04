@@ -8,6 +8,22 @@ closing = "]})"
 regexps = (r"^\s*", r"^\w+", r"^\s*-\s*")
 args_re = (r"^\b+", r"^\s*:\s*")
 
+def split_with(string, delimiter):
+    not_quoted = out_quotes(string)
+    sep_positions = []
+
+    for pos in not_quoted:
+        if string[pos] == delimiter:
+            sep_positions.append(pos)
+
+    split = [""]
+    for i in range(len(string)):
+        if i in sep_positions:
+            split.append("")
+        else: #Skips semicolons
+            split[-1] += string[i]
+    return split
+
 def tokenise(string):
     
     parts = []
@@ -27,23 +43,20 @@ def tokenise(string):
         else:
             stripped += string[i]
     string = stripped
-    not_quoted = out_quotes(string) #Needs to re-calculate
 
-    sep_positions = []
-    for pos in not_quoted:
-        if string[pos] == ";":
-            sep_positions.append(pos)
-    print(sep_positions)
-    split = [""]
-    for i in range(len(string)):
-        if i in sep_positions:
-            split.append("")
-        else: #Skips semicolons
-            split[-1] += string[i]
+    separated = split_with(string, ";")
+    print(separated)
+    for i in range(len(separated)):
+        separated[i] = split_with(separated[i], ":")
+        separated[i][0] = tuple(split_with(separated[i][0], ","))
+    separated = tuple(map(lambda arr: tuple(arr), separated))
+    print(dict(separated))
 
-    print(split)
-
-    
+def method(multi_key_dict, key):
+    for k_tuple in multi_key_dict.keys():
+        if key in k_tuple:
+            return multi_key_dict[multi_key_tuple]
+    raise KeyError("Key '{}' not found".format(key))
 
 def out_quotes(string):
     print("max =", len(string))
@@ -56,4 +69,4 @@ def out_quotes(string):
     return outside
 
 if __name__ == "__main__":
-    tokenise('obj - type(obj): obj.num; int, float: obj; str: "hello there,"  + obj')
+    tokenise('obj - type(obj): obj.num; int, float: obj; str: "You are: "  + obj')
