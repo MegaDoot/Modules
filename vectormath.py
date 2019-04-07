@@ -13,7 +13,7 @@ def size(a):
     return sqrt(sum(val**2 for val in a))
 
 def angle(a):
-    return atan(a[0]/a[1])
+    return 90 if a[1] == 0 else atan(a[0]/a[1])
 
 def _vectorise_binary(func):
     def new_func(a, b):
@@ -40,3 +40,16 @@ funcs = {
 for name, func in funcs.items():
     vectored = _vectorise_binary(func)
     globals()[name] = vectored
+
+if __name__ == "__main__":
+    for testA, testB in (([1, 5, 7], [1, 5, 7]), ([2, 5, 4], 8)):
+        print("A:", testA, "B:", testB)
+        for funcName in funcs.keys():
+            print(funcName.title()+":", globals()[funcName](testA, testB))
+        print()
+
+    testA = [2, 3]
+    print("Cart:",testA)
+    resultA = to_polar(testA)
+    print("to_polar:",resultA)
+    print("from_polar:", from_polar(**resultA))
