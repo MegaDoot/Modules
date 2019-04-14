@@ -53,7 +53,7 @@ The more dunder methods used, the more concise and 'dry' the code becomes.
 """
 
 from inspect import signature as sig
-import tokenise as tkn
+import re
 
 __all__ = ("add_methods", "BIN_OPERS", "IBIN_OPERS")
 
@@ -62,6 +62,82 @@ SPECIAL = {"__getitem__": (False,), "__setitem__": (False, False)}
 
 BIN_OPERS = ("__add__", "__mul__", "__div__", "__truediv__", "__sub__")
 IBIN_OPERS = tuple(map(lambda func: "__i" + func[2:], BIN_OPERS))
+
+class tkn:
+    opening = "[{("
+    closing = "]})"
+
+    regexps = (r"^\s*", r"^\w+", r"^\s*-\s*")
+    args_re = (r"^\b+", r"^\s*:\s*")
+
+    @staticmethod
+    def split_with(string, delimiter):
+        not_quoted = tkn.out_quotes(string)
+        sep_positions = []
+
+        for pos in not_quoted:
+            if string[pos] == delimiter:
+                sep_positions.append(pos)
+
+        split = [""]
+        for i in range(len(string)):
+            if i in sep_positions:
+                split.append("")
+            else: #Skips semicolons
+                split[-1] += string[i]
+        return split
+
+    @staticmethod
+    def tokenise(string):
+        not_quoted = tkn.out_quotes(string) #Remove all text in quotation marks and apostrophes
+        stripped = "" #Spaces removed
+        for i in range(len(string)):
+            if string[i] == " ":
+                if not i in not_quoted:
+                    stripped += string[i]
+            else:
+                stripped += string[i]
+        string = stripped
+
+        separated = tkn.split_with(string, ";")
+        for i in range(len(separated)):
+            separated[i] = tkn.split_with(separated[i], ":")
+            separated[i][0] = list(tkn.split_with(separated[i][0], ","))
+        return separated
+
+    @staticmethod
+    def method(multi_key_dict, obj, key):
+        type_ = type(obj)
+        for k_tuple in multi_key_dict.keys():
+            evaluated = tuple(map(eval, k_tuple))
+            if type_ in evaluated:
+                return multi_key_dict[k_tuple]
+        raise KeyError("Key '{}' not found".format(key))
+
+    @staticmethod
+    def out_quotes(string):
+        indexes = [i for i in range(len(string)) if string[i] == '"']
+        inside = []
+        iterate = tuple(range(0, len(indexes), 2))
+        for i in iterate:
+            inside += tuple(range(indexes[i], indexes[i + 1] + 1))
+        outside = [i for i in range(len(string)) if not i in inside]
+        return outside
+
+    @staticmethod
+    def unpack(tokens):
+            individual = {}
+            for i in range(len(tokens)):
+                for x in range(len(tokens[i][0])):
+                    individual[tokens[i][0][x]] = tokens[i][1]
+            return individual
+
+    @staticmethod
+    def run(dict_, obj):
+        for k, v in dict_.items():
+            if eval(k) == type(obj):
+                return eval(v)
+
 
 def _mkdict(dict_, key):
     for keys_tuple in dict_.keys():
@@ -75,7 +151,7 @@ def _dunders(obj): #Lists all dunder methods of an object
 def _mapper(this, func:str, magic_method, var_func, *others):
     true_false = SPECIAL.get(func, (True,)) #Defaults to (True,) if not special
     #For each boolean in the list, True: Use the specified attribute of the class, False: Use the value outright
-    arg_amount = _find_args(magic_method) #Number of arguments expected
+    arg_amount = find_args(magic_method) #Number of arguments expected
     if len(true_false) < arg_amount: #If too few amount entered (ignores extra arguments)
         if func in SPECIAL.keys(): #If it's a special snowflake with arguments other than: [The Same Type], the case for most arithmetic methods
             raise DunderArgsError("Wrong number of values for {}, expected {}, got {} -> {}".format(func, arg_amount, len(true_false), others))
@@ -91,7 +167,8 @@ def _mapper(this, func:str, magic_method, var_func, *others):
     return tuple(args) #No longer needs to be changed, therefore tuple
     
 
-def _find_args(func): #Number of arguments required. Note that extra arguments are ignored, like JavaScript
+def find_args(func): #Number of arguments required. Note that extra arguments are ignored, like JavaScript
+    print("f")
     try:
         return len(sig(func).parameters) #sig: inspect.signature
     except ValueError: #Could not find a signtature - invalid
@@ -103,10 +180,14 @@ def _make_func(this, func:str, var_func, wrapper, *others): #var_func = original
     #Gets values, either an attribute of 'this', i.e. 'this.num' or a value, i.e. "Hello World"
     return wrapper(magic_method(*mapped)) #function: do the calculation, wrapper: apply a function to the value returned
 
-def make_func(this, func, evaluator, wrapper, *args):
-    def foo(this, other):
-        print(this.num + evaluator(other))
-    return foo
+def make_func(this, func, evaluator, wrapper, *args): 
+    method = getattr(evaluator(this), func)
+    extra_args = find_args(method)
+    print("Amount:", extra_args)
+    def dunder(this, *args):
+##        print(*map(repr, [this, *args]))
+        return getattr(evaluator(this), func)(*map(evaluator, args[:extra_args]))
+    return dunder(this, *args)
 
 class DunderArgsError(TypeError): #Custom exception
     pass
@@ -134,7 +215,8 @@ class add_methods(object): #The decorator
 
 if __name__ == "__main__":
     #Example below, see documentation at top for information
-    @add_methods("int, float: obj", "__add__", wrapper = str)
+    @add_methods("Derivative: int(obj.num); int, float: obj", "__add__", "__mul__", wrapper = str)
+    @add_methods("Derivative: obj", "__len__")
 ##    @add_methods(lambda obj: {(type(obj),): obj.array}, "__setitem__", "__iter__", "__len__")
 ##    @add_methods(lambda obj: {(type(obj),): obj.string}, "__getitem__")
     class Derivative(object):
@@ -147,8 +229,8 @@ if __name__ == "__main__":
     test2 = Derivative("4", [1, 3, 3, 7], "hi")
     print(repr(test1 + 5))
     print(repr(test1 + test2))
-##    print(repr(test1 * test2))
-##    print(len(test2))
+    print(repr(test1 * test2))
+    print(len(test2))
 ##    print(repr(test2[-1]))
 ##    print("Before:", list(test1))
 ##    test1[0] = 100
