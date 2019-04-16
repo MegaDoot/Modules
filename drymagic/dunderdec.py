@@ -82,9 +82,6 @@ import __main__
 
 __all__ = ("add_methods", "BIN_OPERS", "IBIN_OPERS")
 
-SPECIAL = {"__getitem__": (False,), "__setitem__": (False, False)}
-#False: use value, True: use getattr(, variable name)
-
 BIN_OPERS = ("__add__", "__mul__", "__div__", "__truediv__", "__sub__")
 IBIN_OPERS = tuple(map(lambda func: "__i" + func[2:], BIN_OPERS))
 
