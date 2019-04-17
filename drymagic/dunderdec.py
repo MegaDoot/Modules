@@ -35,8 +35,8 @@ Here is a usage of the function on the result (wrapper) and the function called 
 -----------
 Here, the value of num is always a string so it is converted to an integer, the calculations are
 done and the result is converted back into a string, so "5" + "6" would become "11" in this case,
-despite being strings. A lambda must be used in this case as a function, ' int ', is done on the
-values. The equivalent of the code above/code example 2 done normally:
+despite being strings. The equivalent of the code above/code example 2 done normally:
+(Code Example 3)
 -----------
     class Foo:
         def __init__(self):
@@ -67,6 +67,7 @@ should be applied to each different data type. A string is used over a dictionar
 
 In the example below, both 'float' and 'int' have the same behaviour so we do
 'float, int: obj' instead of 'float: obj, int: obj' because that would be  W E T
+(Code Example 4)
 -----------
     @dunderdec.add_methods("__main__.Foo: float(obj.num); float, int: obj", "__add__", "__radd__")
     class Foo:
