@@ -67,6 +67,10 @@ should be applied to each different data type. A string is used over a dictionar
 
 In the example below, both 'float' and 'int' have the same behaviour so we do
 'float, int: obj' instead of 'float: obj, int: obj' because that would be  W E T
+It's important to note that anything defined within the program would not be
+available to the module, hence the need to write '__main__' beforehand. Also,
+each section (made up of data types separated by commas, a colon and a statement)
+is separated by a SEMICOLON and not a comma.
 (Code Example 4)
 -----------
     @dunderdec.add_methods("__main__.Foo: float(obj.num); float, int: obj", "__add__", "__radd__")
