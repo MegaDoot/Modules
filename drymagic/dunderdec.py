@@ -27,7 +27,7 @@ The lambda at the starts specifies which attribute of the class to get.
 Here is a usage of the function on the result (wrapper) and the function called on each argument:
 (Code Example 2)
 -----------
-    @dunderdec.add_methods("Foo: int(obj.num)", "__add__", "__sub__", "__mul__", "__floordiv__", wrapper = str)
+    @dunderdec.add_methods("__main__.Foo: int(obj.num)", "__add__", "__sub__", "__mul__", "__floordiv__", wrapper = str)
     class Foo:
         def __init__(self):
             self.num = "5"
