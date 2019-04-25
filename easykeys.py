@@ -11,6 +11,12 @@ key_bindings = Dict[str, key_callback]
 keycode_tup = Tuple[int, str]
 
 class KBInter(EventDispatcher):
+    """
+    Interface for kivy keyboard manager
+    Mostly designed for desktop
+    Handles interfacing with keyboard
+    All you have to do is add bindings
+    """
     keys_down = ListProp()
     _key_binds = ListProp()
 
@@ -70,26 +76,64 @@ class KBInter(EventDispatcher):
     def _remove_down_key(self, key):
         self.keys_down = self._current_keys_without(key)
 
-    def bind_key(self, trigger: Optional[bool], key: str, func: key_callback):
+    def bind_key(self, key: str, func: key_callback, trigger: bool = True):
+        """
+        Binds a key to a function:
+        If trigger is True, func is called when key goes down
+        If trigger is False, func is called when key goes up
+        """
         self._key_binds.append({
             "key": key,
             "func": func,
             "trigger": trigger
         })
     
-    def bind_keys(self, trigger: Optional[bool], **kwargs):
+    def bind_keys(self, trigger: bool = True, **kwargs):
+        """
+        Bind many keys and functions
+        The keys of kwargs are key name and the vals are functions
+        Trigger functions as in bind_key
+        """
         for key, func in kwargs.items():
-            self.bind_key(trigger, key, func)
+            self.bind_key(key, func, trigger)
 
 if __name__ == "__main__":
     from kivy.base import runTouchApp
     from kivy.uix.label import Label
+    from kivy.uix.button import Button
+    from kivy.uix.gridlayout import GridLayout
+    from kivy.uix.anchorlayout import AnchorLayout
+    from utils import i_iter
 
-    root = Label(text="Nothing yet")
-    setter = root.setter("text")
+    root = GridLayout(cols = 3)
+    
+    root.add_widget(Label(text = "Fully bound to 'a'"))
+
+    full_disp = GridLayout(rows = 2)
+    root.add_widget(full_disp)
+
+    full_setters = []
+    arg_names = ("Is key down?\nBool", "Key Number\nInt", "Key String\nStr", "Other keys down\nList of Strings")
+    for name in arg_names:
+        full_disp.add_widget(Label(text = name))
+    for name in arg_names:
+        out_label = Label(text = str(None))
+        full_setters.append(out_label.setter("text"))
+        full_disp.add_widget(out_label)
+        
+    def set_full_disp(*args):
+        [full_setters[i](None, str(arg)) for arg, i  in i_iter(args)]
+    
+    button_anchor = AnchorLayout(anchor_x = "center", anchor_y = "center")
+    button_anchor.add_widget(Button(text = "Reset", on_press = lambda *args: set_full_disp(*((None,) * len(arg_names))), size = (200, 100), size_hint = (None, None)))
+    root.add_widget(button_anchor)
+
+    root.add_widget(Label(text = "Keys down:"))
+    keys_down = Label(text = "[]")
+    root.add_widget(keys_down)
 
     kb = KBInter(root, full_binds = {
-        "shift": lambda *args: setter("a", str(args))
+        "a": set_full_disp
     })
-
+    kb.bind(keys_down = lambda obj, val: keys_down.setter("text")(obj, str(val)))
     runTouchApp(root)
