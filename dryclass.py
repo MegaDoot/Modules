@@ -130,13 +130,10 @@ def construct(args = [], kwargs = []):
 BIN_OPERS = ("__add__", "__mul__", "__div__", "__truediv__", "__sub__")
 IBIN_OPERS = tuple(map(lambda func: "__i" + func[2:], BIN_OPERS))
 
-class tkn:
-    opening = "[{("
-    closing = "]})"
-
+class Tkn:
     @staticmethod
     def split_with(string, delimiter):
-        not_quoted = tkn.out_quotes(string)
+        not_quoted = Tkn.out_quotes(string)
         sep_positions = []
 
         for pos in not_quoted:
@@ -153,7 +150,7 @@ class tkn:
 
     @staticmethod
     def tokenise(string):
-        not_quoted = tkn.out_quotes(string) #Remove all text in quotation marks and apostrophes
+        not_quoted = Tkn.out_quotes(string) #Remove all text in quotation marks and apostrophes
         stripped = "" #Spaces removed
         for i in range(len(string)):
             if string[i] == " ":
@@ -163,10 +160,10 @@ class tkn:
                 stripped += string[i]
         string = stripped
 
-        separated = tkn.split_with(string, ";")
+        separated = Tkn.split_with(string, ";")
         for i in range(len(separated)):
-            separated[i] = tkn.split_with(separated[i], ":")
-            separated[i][0] = list(tkn.split_with(separated[i][0], ","))
+            separated[i] = Tkn.split_with(separated[i], ":")
+            separated[i][0] = list(Tkn.split_with(separated[i][0], ","))
         return separated
 
     @staticmethod
@@ -206,13 +203,6 @@ class tkn:
 def dunders(obj): #Lists all dunder methods of an object
     return tuple(filter(lambda func: func.startswith("__") and func.endswith("__"), dir(obj)))
 
-def find_args(func): #Number of arguments required. Note that extra arguments are ignored, like JavaScript
-##    print("func:", func)
-    try:
-        return len(signature(func).parameters) #signature: inspect.signature
-    except ValueError: #Could not find a signtature - invalid
-        raise NoSignatureError("Function '{}' does not have a signature so the number of arguments required is not known".format(func))
-  
 def make_func(this, func, evaluator, wrapper, *args):
 ##    print("\nCalled")
     evaluated = evaluator(this)
@@ -233,13 +223,13 @@ class NoSignatureError(ValueError): #Custom exception
 
 class add_methods(object): #The decorator
     def __init__(self, syntax, *funcs:str, wrapper = lambda value: value):
-        self.func_dict = tkn.unpack(tkn.tokenise(syntax))
+        self.func_dict = Tkn.unpack(Tkn.tokenise(syntax))
 ##        print(self.func_dict)
         self.funcs = funcs
         self.wrapper = wrapper
     
     def __call__(self, cls):
-        evaluator = lambda obj: tkn.run(self.func_dict, obj)
+        evaluator = lambda obj: Tkn.run(self.func_dict, obj)
 ##        class Decorated(cls): #Temporary decorated class that contains all of the
         for func in self.funcs: #func is a string
 ##            print("Iterated with", func)
