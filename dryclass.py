@@ -45,7 +45,7 @@ The lambda at the starts specifies which attribute of the class to get.
 Here is a usage of the function on the result (wrapper) and the function called on each argument:
 (Code Example 2)
 -----------
-    @dc.add_methods("__main__.Foo: int(obj.num)", "__add__", "__sub__", "__mul__", "__floordiv__", wrapper = str)
+    @dc.add_methods("__main__.Foo: int(obj.num)", "__add__", "__sub__", "__mul__", "__floordiv__", wrapper = "str")
     class Foo:
         def __init__(self):
             self.num = "5"
@@ -96,6 +96,8 @@ is separated by a SEMICOLON and not a comma.
 -----------
 """
 
+import __main__
+
 __all__ = ("construct", "add_methods", "BIN_OPERS", "IBIN_OPERS")
 
 def construct(args = [], kwargs = []):
@@ -127,8 +129,17 @@ def construct(args = [], kwargs = []):
         return cls
     return decorator
 
-BIN_OPERS = ("__add__", "__mul__", "__div__", "__truediv__", "__sub__")
-IBIN_OPERS = tuple(map(lambda func: "__i" + func[2:], BIN_OPERS))
+
+
+def remove(iterable, name):
+    array = iterable[:]
+    del array[array.index(name)]
+    return array
+
+BIN_OPERS = ("__add__", "__div__", "__floordiv__", "__mod__", "__mul__", "__pow__", "__sub__", "__truediv__")
+IBIN_OPERS = ("__iadd__", "__idiv__", "__imod__", "__imul__", "__pow__", "__isub__")
+
+##IBIN_OPERS = tuple(map(lambda func: "__i" + func[2:], BIN_OPERS))
 
 class Tkn:
     @staticmethod
@@ -213,6 +224,8 @@ def make_func(this, func, evaluator, wrapper, *args):
     to_call = getattr(evaluated, func)
 ##    print("Type:", type(to_call))
 ##    print("Will call:", to_call)
+    print(wrapper)
+    wrapper = eval(wrapper)
     return wrapper(to_call(*map(evaluator, args)))
 
 class DunderArgsError(TypeError): #Custom exception
@@ -222,7 +235,7 @@ class NoSignatureError(ValueError): #Custom exception
     pass
 
 class add_methods(object): #The decorator
-    def __init__(self, syntax, *funcs:str, wrapper = lambda value: value):
+    def __init__(self, syntax, *funcs:str, wrapper = "lambda value: value"):
         self.func_dict = Tkn.unpack(Tkn.tokenise(syntax))
 ##        print(self.func_dict)
         self.funcs = funcs
@@ -252,7 +265,7 @@ if __name__ == "__main__":
     
     #For add_methods
     @add_methods("Derivative: obj.array; int: obj", "__len__", "__iter__", "__getitem__", "__setitem__")
-    @add_methods("Derivative: int(obj.num); int, float: obj", "__add__", "__mul__", wrapper = str)
+    @add_methods("Derivative: int(obj.num); int, float: obj", "__add__", "__mul__", wrapper = "str")
     class Derivative(object):
         def __init__(self, num, array, string):
             self.num = num
