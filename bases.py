@@ -4,6 +4,11 @@ Decimal places are not allowed because I am lazy.
 Not all operators are used
 Consider yourselves honoured that I took the time to add augmented assigment - 'ctrl+c', 'ctrl+v' and 'i' take a lot of effort
 """
+import dryclass as dc
+
+behaviour = "__main__.Base: __main__.to_ten(obj.num, obj.base)"
+@dc.add_methods(behaviour, *dc.BIN_OPERS)
+@dc.add_methods(behaviour, *dc.IBIN_OPERS, wrapper = "Base.__init__")
 class Base:
     def __init__(self,num,base = 10): #ACCEPTS 1 OR 2 ARGUMENTS, base defaults to 10
         self.num = str(num)
@@ -19,58 +24,10 @@ class Base:
         check(self.num,self.base) #Ensure that it only contains the correct characters
     
     #Note that any magic/dunder methods will return base 10 number/decimal
-    def __add__(self,other):
-        return eval(calc("+"))
-    
-    def __sub__(self,other):
-        return eval(calc("-"))
-    
-    def __mul__(self,other):
-        return eval(calc("*"))
-    
-    def __pow__(self,other):
-        return eval(calc("**"))
-    
-    def __floordiv__(self,other):
-        return eval(calc("//"))
-    
-    def __truediv__(self,other): #__div__ is not for Python 3.x
-        return eval(calc("//")) #I can't be bothered to do decimals places
-    
-    def __mod__(self,other):
-        return eval(calc("%"))
 
-    def __eq__(self,other):
-        return eval(calc("=="))
-
-    def __iadd__(self,other):
-        return eval(calc_base("+"))
-    
-    def __isub__(self,other):
-        return eval(calc_base("-"))
-    
-    def __imul__(self,other):
-        return eval(calc_base("*"))
-    
-    def __ipow__(self,other):
-        return eval(calc_base("**"))
-    
-    def __ifloordiv__(self,other):
-        return eval(calc_base("//"))
-    
-    def __itruediv__(self,other):
-        return self.__ifloordiv__(other)
-    
-    def __imod__(self,other):
-        return eval(calc_base("%"))
 chars = "0123456789abcdefghijklmnopqrstuvwxyz" #Up to base 36
 
 #Magic methods return new 'Base' object
-def calc(oper): #More concise to add new magic methods
-    return "to_ten(self.num,self.base)"+oper+"to_ten(other.num,other.base)"
-
-def calc_base(oper):
-    return "Base(to_ten(self.num,self.base)"+oper+"to_ten(other.num,other.base))"
 
 def check(num,base):
     num = str(num)  
