@@ -1,29 +1,34 @@
 """
 Alex Scorza 2019
+Copyright statement:
+1.
+    1. Plz dont steal
+
 
 HOW TO USE 'construct'
 Avoids doing something like this:
-
-    def __init__(genus, species, legs, speed, eyes = 2):
+(Code Example 1)
+-----------
+    def __init__(genus, species, legs, mass, speed, eyes = 2):
         self.genus = genus
         self.species = species
         self.legs = legs
+        self.mass = mass
         self.speed = speed
         self.eyes = eyes
         print("Initialised")
-        
+-----------        
 BECAUSE THAT WOULD BE  W E T
 Instead, you can do:
-
-    @construct(args = ("genus", "species", "legs", "speed"), kwargs = [("eyes", 2)])
+-----------
+    @construct(args = ("genus", "species", "legs", "mass", "speed"), kwargs = [("eyes", 2)])
     class Foo:
         def __init__(self):
             print("Initialised")
-
-W  O W
+-----------
+W O W
 ISN'T
 THAT
-
 
 D          R          Y
 
@@ -253,6 +258,7 @@ class add_methods(object): #The decorator
 
 
 if __name__ == "__main__":
+    #For construct
     @construct(args = ("a", "b"), kwargs = (("c", 3), ("d", 4), ("e", 5)))
     class Foo:
         def __init__(self):
@@ -260,3 +266,23 @@ if __name__ == "__main__":
             print(self.a, self.b, self.c, self.d, self.e)
     
     test = Foo(1, 2, 9, e = 10)
+    
+    #For add_methods
+    @add_methods("Derivative: obj.array; int: obj", "__len__", "__iter__", "__getitem__", "__setitem__")
+    @add_methods("Derivative: int(obj.num); int, float: obj", "__add__", "__mul__", wrapper = str)
+    class Derivative(object):
+        def __init__(self, num, array, string):
+            self.num = num
+            self.array = array
+            self.string = string
+
+    test1 = Derivative("3", [1, 2, 3], "hello")
+    test2 = Derivative("10", [1, 3, 3, 7], "hi")
+    print(len(test2))
+    print(repr(test1 + 5))
+    print(repr(test1 + test2))
+    print(repr(test1 * test2))
+    print(repr(test2[-1]))
+    print("Before:", list(test1))
+    test1[0] = 100
+    print("After:", list(test1))
