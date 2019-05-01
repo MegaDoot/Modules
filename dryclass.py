@@ -3,8 +3,6 @@ Alex Scorza 2019
 Copyright statement:
 1.
     1. Plz dont steal
-
-
 HOW TO USE 'construct'
 Avoids doing something like this:
 (Code Example 1)
@@ -29,10 +27,7 @@ Instead, you can do:
 W O W
 ISN'T
 THAT
-
 D          R          Y
-
-
 HOW TO USE 'add_method':
 Add a decorator before the function -
 (Code Example 1)
@@ -110,7 +105,6 @@ def construct(args = [], kwargs = []):
         else:
             func = lambda self: None
         def init_wrapper(*a, **kw):
-            print(a)
             self = a[0]
             a = a[1:] #Save and remove 'self' argument
             if len(a) < len(args) or len(a) > len(args) + len(kwargs):
@@ -224,7 +218,6 @@ def make_func(this, func, evaluator, wrapper, *args):
     evaluated = evaluator(this)
     if evaluated == this: #If unchanged, it finds its own method, resulting in recursion :(
         raise RecursionError("Statement entered results in recursion - statement type of class to be decorated must not equal 'obj'")
-    method = getattr(evaluator(this), func)
 ##    print("Amount:", extra_args)
     
     to_call = getattr(evaluated, func)
@@ -241,7 +234,7 @@ class NoSignatureError(ValueError): #Custom exception
 class add_methods(object): #The decorator
     def __init__(self, syntax, *funcs:str, wrapper = lambda value: value):
         self.func_dict = tkn.unpack(tkn.tokenise(syntax))
-        print(self.func_dict)
+##        print(self.func_dict)
         self.funcs = funcs
         self.wrapper = wrapper
     
