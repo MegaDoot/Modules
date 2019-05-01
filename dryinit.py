@@ -1,15 +1,27 @@
 """
 Alex Scorza 2019
 Avoids doing something like this:
-
-    def __init__(genus, species, legs, eyes, speed):
+    def __init__(genus, species, legs, speed, eyes = 2):
         self.genus = genus
         self.species = species
         self.legs = legs
-        self.eyes = eyes
         self.speed = speed
-
+        self.eyes = eyes
+        print("Initialised")
 BECAUSE THAT WOULD BE  W E T
+Instead, you can do:
+
+    @construct(args = ("genus", "species", "legs", "speed"), kwargs = [("eyes", 2)])
+    class Foo:
+        def __init__(self):
+            print("Initialised")
+
+W  O W
+ISN'T
+THAT
+
+
+D          R          Y
 """
 
 __all__ = ("construct",)
@@ -35,16 +47,20 @@ def construct(args = [], kwargs = []):
                 else:
                     setattr(cls, args[i], a[i])
             for k, v in kwargs[remove_kw:]: #All kwargs entered in the keyword and argument format
-                setattr(cls, k, v)
+                if k in kw:
+                    setattr(cls, k, kw[k])
+                else:
+                    setattr(cls, k, v)
             func(self)
         setattr(cls, "__init__", init_wrapper)
         return cls
     return decorator
 
 if __name__ == "__main__":
-    @construct(args = ("a", "b"), kwargs = (("c", 3), ("d", 4)))
+    @construct(args = ("a", "b"), kwargs = (("c", 3), ("d", 4), ("e", 5)))
     class Foo:
         def __init__(self):
-            print(self.a, self.b, self.c, self.d)
+            print("Initialised")
+            print(self.a, self.b, self.c, self.d, self.e)
     
-    test = Foo(1, 2, 8)
+    test = Foo(1, 2, 9, e = 10)
