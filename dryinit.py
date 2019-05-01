@@ -1,6 +1,7 @@
 """
 Alex Scorza 2019
 Avoids doing something like this:
+
     def __init__(genus, species, legs, speed, eyes = 2):
         self.genus = genus
         self.species = species
@@ -8,6 +9,7 @@ Avoids doing something like this:
         self.speed = speed
         self.eyes = eyes
         print("Initialised")
+        
 BECAUSE THAT WOULD BE  W E T
 Instead, you can do:
 
