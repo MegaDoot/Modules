@@ -94,16 +94,19 @@ is separated by a SEMICOLON and not a comma.
             self.num = 5
     print(repr(Foo() + 1), repr(Foo() + Foo()), repr(3 + Foo()))
 -----------
-
+HOW TO USE 'importer':
 What if you don't want to add '__main__' before all functions you define?
 The 'importer' function allows you to write your own statement, i.e.
-'importer(import __main__ as m)', so you can now write it as m.Foo not __main__.Foo
+'importer("m")', so you can now write it as m.Foo not __main__.Foo
+'importer("m")' is equivalent to 'import __main__ as m'
 """
 
 __all__ = ("construct", "add_methods", "importer", "BIN_OPERS", "IBIN_OPERS")
 
-def construct(args = [], kwargs = []):
+def construct(args = [], kwargs = [], extra_a = None, extra_kw = None):
     def decorator(cls):
+        star = []
+        starstar = {}
         if hasattr(cls, "__init__"):
             func = cls.__init__
         else:
@@ -111,21 +114,31 @@ def construct(args = [], kwargs = []):
         def init_wrapper(*a, **kw):
             self = a[0]
             a = a[1:] #Save and remove 'self' argument
-            if len(a) < len(args) or len(a) > len(args) + len(kwargs):
-                raise TypeError("Got {} args, expected {} to {}".format(len(a), len(args), len(args) + len(kwargs)))
+            if extra_a is None:
+                if len(a) < len(args) or len(a) > len(args) + len(kwargs):
+                    raise TypeError("Got {} args, expected {} to {}".format(len(a), len(args), len(args) + len(kwargs)))
             remove_kw = 0 #Ignore all that were entered as args
             for i in range(len(a)): #arguments
                 if i + 1 > len(args):
-                    set_val = kwargs[1 + i - len(a)][0]
-                    remove_kw += 1
-                    setattr(cls, set_val, a[i])
+                    if i + 1 > len(args) + len(kwargs):
+                        if extra_a is None:
+                            raise Exception("This should've been caught already")
+                        else:
+                            star.append(a[i])
+                    else:
+                        set_val = kwargs[1 + i - len(a)][0]
+                        remove_kw += 1
+                        setattr(cls, set_val, a[i])
                 else:
                     setattr(cls, args[i], a[i])
-            for k, v in kwargs[remove_kw:]: #All kwargs entered in the keyword and argument format
-                if k in kw:
-                    setattr(cls, k, kw[k])
-                else:
+            for k, v in kw.items(): #All kwargs entered in the keyword and argument format
+                print(k, v)
+                if k in kwargs[remove_kw:]: #If in the remaining kwargs
                     setattr(cls, k, v)
+                else: #If extra
+                    starstar[k] = v
+            print(star)
+            print(starstar)
             func(self)
         setattr(cls, "__init__", init_wrapper)
         return cls
@@ -235,8 +248,8 @@ class DunderArgsError(TypeError): #Custom exception
 class NoSignatureError(ValueError): #Custom exception
     pass
 
-def importer(statement = "import __main__"):
-    exec(statement)
+def importer(name = "__main__"):
+    globals()[name] = __import__("__main__")
 
 class add_methods(object): #The decorator
     def __init__(self, syntax, *funcs:str, wrapper = "lambda value: value"):
