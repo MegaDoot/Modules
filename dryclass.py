@@ -2,7 +2,8 @@
 Alex Scorza 2019
 Copyright statement:
 1.
-    1. Plz dont steal
+    1. Pls dont steal
+
 HOW TO USE 'construct'
 Avoids doing something like this:
 (Code Example 1)
@@ -28,6 +29,12 @@ W O W
 ISN'T
 THAT
 D          R          Y
+
+You can also add a list for extra arguments (*args) to go with 'extra_a = "name_of_variable"'
+A dictionary can be saved for keyword arguments (**kwargs): 'extra_kw = "name_of_variable"'
+Both are None by default
+
+
 HOW TO USE 'add_method':
 Add a decorator before the function -
 (Code Example 1)
@@ -114,31 +121,36 @@ def construct(args = [], kwargs = [], extra_a = None, extra_kw = None):
         def init_wrapper(*a, **kw):
             self = a[0]
             a = a[1:] #Save and remove 'self' argument
-            if extra_a is None:
-                if len(a) < len(args) or len(a) > len(args) + len(kwargs):
-                    raise TypeError("Got {} args, expected {} to {}".format(len(a), len(args), len(args) + len(kwargs)))
+            if len(a) < len(args) or (extra_a is None and len(a) > len(args) + len(kwargs)):
+                raise TypeError("Got {} args, expected {} to {}".format(len(a), len(args), len(args) + len(kwargs)))
             remove_kw = 0 #Ignore all that were entered as args
             for i in range(len(a)): #arguments
-                if i + 1 > len(args):
-                    if i + 1 > len(args) + len(kwargs):
-                        if extra_a is None:
-                            raise Exception("This should've been caught already")
-                        else:
+                if i + 1 > len(args): #If it exceeds the length of the args
+                    if i + 1 > len(args) + len(kwargs): #If it exceeds the length of args and kwargs
+                        if extra_a is None: #If not defined
+                            raise Exception("This should've been caught already. Valve pls fix")
+                        else: #Add to *
                             star.append(a[i])
-                    else:
+                    else: #Must be a normal arg that represents a default argument
                         set_val = kwargs[1 + i - len(a)][0]
                         remove_kw += 1
                         setattr(cls, set_val, a[i])
                 else:
                     setattr(cls, args[i], a[i])
-            for k, v in kw.items(): #All kwargs entered in the keyword and argument format
-                print(k, v)
-                if k in kwargs[remove_kw:]: #If in the remaining kwargs
+            for k, v in kwargs[remove_kw:]: #All kwargs entered in the keyword and argument format
+                setattr(cls, k, v)
+            for k, v in kw.items():
+                if k in dict(kwargs).keys():
                     setattr(cls, k, v)
-                else: #If extra
+                else:
+                    if extra_kw is None:
+                        raise TypeError("Unexpected keyword argument '{}'".format(k))
                     starstar[k] = v
-            print(star)
-            print(starstar)
+                    
+            if extra_a is not None:
+                setattr(cls, extra_a, star)
+            if extra_kw is not None:
+                setattr(cls, extra_kw, starstar)
             func(self)
         setattr(cls, "__init__", init_wrapper)
         return cls
@@ -272,13 +284,14 @@ class add_methods(object): #The decorator
 
 if __name__ == "__main__":
     #For construct
-    @construct(args = ("a", "b"), kwargs = (("c", 3), ("d", 4), ("e", 5)))
+    @construct(args = ("a", "b"), kwargs = (("c", 3), ("d", 4), ("e", 5)), extra_kw = "keywords")
     class Foo:
         def __init__(self):
             print("Initialised")
             print(self.a, self.b, self.c, self.d, self.e)
+            print(self.keywords)
     
-    test = Foo(1, 2, 9, e = 10)
+    test = Foo(1, 2, 9, e = 10, f = 100)
     
     #For add_methods
     @add_methods("Derivative: obj.array; int: obj", "__len__", "__iter__", "__getitem__", "__setitem__")
