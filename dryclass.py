@@ -94,11 +94,13 @@ is separated by a SEMICOLON and not a comma.
             self.num = 5
     print(repr(Foo() + 1), repr(Foo() + Foo()), repr(3 + Foo()))
 -----------
+
+What if you don't want to add '__main__' before all functions you define?
+The 'importer' function allows you to write your own statement, i.e.
+'importer(import __main__ as m)', so you can now write it as m.Foo not __main__.Foo
 """
 
-import __main__
-
-__all__ = ("construct", "add_methods", "BIN_OPERS", "IBIN_OPERS")
+__all__ = ("construct", "add_methods", "importer", "BIN_OPERS", "IBIN_OPERS")
 
 def construct(args = [], kwargs = []):
     def decorator(cls):
@@ -224,7 +226,6 @@ def make_func(this, func, evaluator, wrapper, *args):
     to_call = getattr(evaluated, func)
 ##    print("Type:", type(to_call))
 ##    print("Will call:", to_call)
-    print(wrapper)
     wrapper = eval(wrapper)
     return wrapper(to_call(*map(evaluator, args)))
 
@@ -233,6 +234,9 @@ class DunderArgsError(TypeError): #Custom exception
 
 class NoSignatureError(ValueError): #Custom exception
     pass
+
+def importer(statement = "import __main__"):
+    exec(statement)
 
 class add_methods(object): #The decorator
     def __init__(self, syntax, *funcs:str, wrapper = "lambda value: value"):
@@ -271,7 +275,7 @@ if __name__ == "__main__":
             self.num = num
             self.array = array
             self.string = string
-
+    print()
     test1 = Derivative("3", [1, 2, 3], "hello")
     test2 = Derivative("10", [1, 3, 3, 7], "hi")
     print(len(test2))
@@ -282,3 +286,5 @@ if __name__ == "__main__":
     print("Before:", list(test1))
     test1[0] = 100
     print("After:", list(test1))
+else:
+    importer()
