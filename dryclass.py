@@ -108,7 +108,7 @@ The 'importer' function allows you to write your own statement, i.e.
 'importer("m")' is equivalent to 'import __main__ as m'
 """
 
-__all__ = ("construct", "add_methods", "importer", "BIN_OPERS", "IBIN_OPERS")
+__all__ = ("construct", "add_methods", "importer", "BIN_OPERS", "IBIN_OPERS", "to_static", "to_cls")
 
 def construct(args = [], kwargs = [], extra_a = None, extra_kw = None):
     def decorator(cls):
@@ -281,6 +281,19 @@ class add_methods(object): #The decorator
                 #Note that 'this' is used to distinguish from 'self' defined in the class
         return cls #Turn the class into the decorated class
 
+def edit(cls, function, exclude = tuple()):
+    for func in filter(lambda name: not (name.startswith("__") and name.endswith("__")), dir(cls)):
+##        print(func, type(func))
+        if function not in exclude:
+            setattr(cls, func, function(getattr(cls, func)))
+##        print(func)
+    return cls
+
+def to_static(cls, **kwargs):
+    return edit(cls, staticmethod, **kwargs)
+
+def to_cls(cls, **kwargs):
+    return edit(cls, classmethod, **kwargs)
 
 if __name__ == "__main__":
     #For construct
@@ -311,6 +324,14 @@ if __name__ == "__main__":
     print(repr(test2[-1]))
     print("Before:", list(test1))
     test1[0] = 100
-    print("After:", list(test1))
+    print("After:", list(test1), "\n")
+
+    @to_cls
+    class Foo:
+        def bar():
+            pass
+    test3 = Foo()
+    print(type(test3.bar))
+    print({"function": "staticmethod", "method": "instancemethod"}[type(test3.bar).__name__])
 else:
     importer()
