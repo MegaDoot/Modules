@@ -332,6 +332,10 @@ if __name__ == "__main__":
             pass
     test3 = Foo()
     print(type(test3.bar))
-    print({"function": "staticmethod", "method": "instancemethod"}[type(test3.bar).__name__])
+    try:
+        Foo.bar()
+        print({"function": "staticmethod", "method": "instancemethod"}[type(test3.bar).__name__])
+    except TypeError:
+        print("classmethod")
 else:
     importer()
