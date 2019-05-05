@@ -129,6 +129,7 @@ The 'importer' function allows you to write your own statement, i.e.
 'importer("m")', so you can now write it as m.Foo not __main__.Foo
 'importer("m")' is equivalent to 'import __main__ as m'
 """
+import operator
 
 __all__ = ("construct", "to_static", "to_cls", "generic", "dunders", "BIN_OPERS", "IBIN_OPERS", "add_methods", "importer")
 
@@ -262,22 +263,26 @@ class Tkn:
                 return eval(v)
         raise NameError("Behaviour of type '{}' is not defined".format(type(obj).__name__))
 
-BIN_OPERS = ("__add__", "__div__", "__floordiv__", "__mod__", "__mul__", "__pow__", "__sub__", "__truediv__")
-IBIN_OPERS = ("__iadd__", "__idiv__", "__imod__", "__imul__", "__pow__", "__isub__")
-##IBIN_OPERS = tuple(map(lambda func: "__i" + func[2:], BIN_OPERS))
+BIN_OPERS = ("__add__", "__floordiv__", "__mod__", "__mul__", "__pow__", "__sub__", "__truediv__")
+##IBIN_OPERS = ("__iadd__", "__ifloordiv__", "__imod__", "__imul__", "__ipow__", "__isub__")
+IBIN_OPERS = tuple(map(lambda func: "__i" + func[2:], BIN_OPERS))
 
 def make_func(this, func, evaluator, wrapper, *args):
 ##    print("\nCalled")
     evaluated = evaluator(this)
     if evaluated == this: #If unchanged, it finds its own method, resulting in recursion :(
-        raise RecursionError("Statement entered results in recursion - statement type of class to be decorated must not equal 'obj'")
-##    print("Amount:", extra_args)
-    
-    to_call = getattr(evaluated, func)
-##    print("Type:", type(to_call))
-##    print("Will call:", to_call)
+        raise RecursionError("Statement entered results in infinite recursion - statement type of class to be decorated must not equal 'obj'")
     wrapper = eval(wrapper)
-    return wrapper(to_call(*map(evaluator, args)))
+    mapped = tuple(map(evaluator, args))
+    if func.startswith("__i"): #dir of int, str, etc. don't contain inplace operators
+        op = getattr(operator, func[2:][:-2]) #i.e. func = __iadd__ -> operator.iadd
+        called = op(evaluated, *mapped)
+    else:
+        to_call = getattr(evaluated, func)
+        called = to_call(*mapped)
+##    print("called =", called)
+    wrapped = wrapper(called)
+    return wrapped
 
 class DunderArgsError(TypeError): #Custom exception
     pass
@@ -290,6 +295,7 @@ def importer(name = "__main__"):
 
 class add_methods(object): #The decorator
     def __init__(self, syntax, *funcs:str, wrapper = "lambda value: value"):
+        print("Called")
         self.func_dict = Tkn.unpack(Tkn.tokenise(syntax))
 ##        print(self.func_dict)
         self.funcs = funcs
@@ -298,9 +304,11 @@ class add_methods(object): #The decorator
     def __call__(self, cls):
         evaluator = lambda obj: Tkn.run(self.func_dict, obj)
 ##        class Decorated(cls): #Temporary decorated class that contains all of the
+        print("self.wrapper =", self.wrapper)
         for func in self.funcs: #func is a string
 ##            print("Iterated with", func)
-            code = lambda this, *args, func = func: make_func(this, func, evaluator, self.wrapper, *args)
+            
+            code = lambda this, *args, func = func, wrapper = self.wrapper: make_func(this, func, evaluator, wrapper, *args)
             setattr(cls, func, code)
                 #i.e. self.num.__add__(other.num)
                 #Note that 'this' is used to distinguish from 'self' defined in the class
