@@ -273,8 +273,8 @@ MATH_OPERS = from_i(IMATH_OPERS)
 EQ_OPERS = ("__eq__", "__ge__", "__le__", "__gt__", "__lt__", "__ne__")
 ITER_OPERS = ("__contains__", "__delitem__", "__delslice__", "__getslice__", "__index__", "__len__", "__setitem__", "__setslice__")
 TYPE_OPERS = ("__float__", "__int__")
-COND_OPERS = ("__iand__", "__ior__", "__ixor__")
-ICOND_OPERS = from_i(COND_OPERS)
+ICOND_OPERS = ("__iand__", "__ior__", "__ixor__")
+COND_OPERS = from_i(COND_OPERS)
 
 def make_func(this, func, evaluator, wrapper, *args):
 ##    print("\nCalled")
