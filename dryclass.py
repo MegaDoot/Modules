@@ -279,7 +279,6 @@ ICOND_OPERS = from_i(COND_OPERS)
 def make_func(this, func, evaluator, wrapper, *args):
 ##    print("\nCalled")
     evaluated = evaluator(this)
-    print(this, evaluated)
     if evaluated is this: #If unchanged, it finds its own method, resulting in recursion :(
         raise RecursionError("Statement entered results in infinite recursion - statement type of class to be decorated must not equal 'obj'")
     wrapper = eval(wrapper)
