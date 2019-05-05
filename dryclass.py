@@ -33,7 +33,7 @@ You can also add a list for extra arguments (*args) to go with 'extra_a = "name_
 A dictionary can be saved for keyword arguments (**kwargs): 'extra_kw = "name_of_variable"'
 Both are None by default
 
-HOW TO USE 'to_static', 'to_cls' and 'generic'@
+HOW TO USE 'to_static', 'to_cls' and 'generic':
 Recommended: look at the code in __name__ == "__main__" section
 'to_static': converts all methods in a class into staticmethods
 'to_cls': converts all methods in a class into classmethods
@@ -78,6 +78,7 @@ Here is a usage of the function on the result (wrapper) and the function called 
             self.num = "5"
     print(repr(Foo() + Foo())) #Returns "10"
 -----------
+(Note that, intuitively, a lambda can be used for the wrapper or any valid callable statement, i.e. lambda num: str(num))
 Here, the value of num is always a string so it is converted to an integer, the calculations are
 done and the result is converted back into a string, so "5" + "6" would become "11" in this case,
 despite being strings. The equivalent of the code above/code example 4 done normally:
