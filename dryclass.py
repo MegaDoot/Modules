@@ -270,11 +270,12 @@ IBIN_OPERS = tuple(map(lambda func: "__i" + func[2:], BIN_OPERS))
 def make_func(this, func, evaluator, wrapper, *args):
 ##    print("\nCalled")
     evaluated = evaluator(this)
-    if evaluated == this: #If unchanged, it finds its own method, resulting in recursion :(
+    print(this, evaluated)
+    if evaluated is this: #If unchanged, it finds its own method, resulting in recursion :(
         raise RecursionError("Statement entered results in infinite recursion - statement type of class to be decorated must not equal 'obj'")
     wrapper = eval(wrapper)
     mapped = tuple(map(evaluator, args))
-    if func.startswith("__i"): #dir of int, str, etc. don't contain inplace operators
+    if func.startswith("__i") and func != "__iter__": #dir of int, str, etc. don't contain inplace operators
         op = getattr(operator, func[2:][:-2]) #i.e. func = __iadd__ -> operator.iadd
         called = op(evaluated, *mapped)
     else:
