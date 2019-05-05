@@ -2,12 +2,13 @@
 Note the following:
 Decimal places are not allowed because I am lazy.
 Not all operators are used
+Consider yourselves honoured that I took the time to add augmented assigment - 'ctrl+c', 'ctrl+v' and 'i' take a lot of effort
 """
 import dryclass as dc
 dc.importer("m")
 behaviour = "m.Base: m.to_ten(obj.num, obj.base); float, int: int(obj)"
-@dc.add_methods(behaviour, *dc.BIN_OPERS, "__eq__")
-@dc.add_methods(behaviour, *dc.IBIN_OPERS, wrapper = "lambda value: m.Base(int(value))")
+@dc.add_methods(behaviour, *dc.MATH_OPERS, *dc.EQ_OPERS)
+@dc.add_methods(behaviour, *dc.IMATH_OPERS, wrapper = "lambda value: m.Base(int(value))")
 class Base:
     def __init__(self,num,base = 10): #ACCEPTS 1 OR 2 ARGUMENTS, base defaults to 10
         self.num = str(num)
@@ -21,6 +22,7 @@ class Base:
     def to_base(self,to): #Uses self.num and self.base, changes to base
         self.num = self.in_base(to)
         self.base = to
+        print("Now:", self)
         check(self.num,self.base) #Ensure that it only contains the correct characters
     #Note that any magic/dunder methods will return base 10 number/decimal
 chars = "0123456789abcdefghijklmnopqrstuvwxyz" #Up to base 36
@@ -32,7 +34,7 @@ def check(num,base):
     if not base in range(2,len(chars)+1):
         raise ValueError("Base of {} is invalid - must be between (and inclusive of 2 and {})".format(base,len(chars)))
     for x in str(num):
-            if x not in chars or chars.index(x) > base:
+            if x not in chars or chars.index(x) + 1 > base:
                 raise ValueError("Invalid character used: '{}' for base {}".format(str(x),base))
 def to_ten(num,base):#Could be done in one line
     neg = False
@@ -48,6 +50,8 @@ def to_ten(num,base):#Could be done in one line
     else:
         return result 
 def from_ten(num,base): #Returns string as there may be letters
+    if base == 10:
+        return str(num)
     num = int(num)
     values = []
     negative = False
@@ -68,5 +72,5 @@ if __name__ == "__main__":
     print(c.num)
     c /= Base("2")
     print(c.num)
+    print(Base("f",16) < Base("h",18))
     print(Base("f",16) == Base("15",10))
-    print(Base("f",16) == Base("16",10))
