@@ -131,7 +131,7 @@ The 'importer' function allows you to write your own statement, i.e.
 """
 import operator
 
-__all__ = ("construct", "to_static", "to_cls", "generic", "dunders", "BIN_OPERS", "IBIN_OPERS", "add_methods", "importer")
+__all__ = ("construct", "to_static", "to_cls", "generic", "dunders", "IMATH_OPERS", "MATH_OPERS", "EQ_OPERS", "ITER_OPERS", "TYPE_OPERS", "COND_OPERS", "ICOND_OPERS", "add_methods", "importer")
 
 def construct(args = [], kwargs = [], extra_a = None, extra_kw = None):
     def decorator(cls):
@@ -263,9 +263,18 @@ class Tkn:
                 return eval(v)
         raise NameError("Behaviour of type '{}' is not defined".format(type(obj).__name__))
 
-BIN_OPERS = ("__add__", "__floordiv__", "__mod__", "__mul__", "__pow__", "__sub__", "__truediv__")
-##IBIN_OPERS = ("__iadd__", "__ifloordiv__", "__imod__", "__imul__", "__ipow__", "__isub__")
-IBIN_OPERS = tuple(map(lambda func: "__i" + func[2:], BIN_OPERS))
+def from_i(funcs):
+    return tuple(map(lambda func: "__" + func[3:], funcs))
+
+I_START = ("__index__", "__init__", "__instancecheck__", "__int__", "__invert__", "__iter__")
+
+IMATH_OPERS = ("__iadd__", "__ifloordiv__", "__ilshift__", "__imod__", "__imul__", "__ipow__", "__irshift__", "__isub__", "__itruediv__")
+MATH_OPERS = from_i(IBIN_OPERS)
+EQ_OPERS = ("__eq__", "__ge__", "__le__", "__gt__", "__lt__", "__ne__")
+ITER_OPERS = ("__contains__", "__delitem__", "__delslice__", "__getslice__", "__index__", "__len__", "__setitem__", "__setslice__")
+TYPE_OPERS = ("__float__", "__int__")
+COND_OPERS = ("__iand__", "__ior__", "__ixor__")
+ICOND_OPERS = from_i(COND_OPERS)
 
 def make_func(this, func, evaluator, wrapper, *args):
 ##    print("\nCalled")
@@ -275,7 +284,7 @@ def make_func(this, func, evaluator, wrapper, *args):
         raise RecursionError("Statement entered results in infinite recursion - statement type of class to be decorated must not equal 'obj'")
     wrapper = eval(wrapper)
     mapped = tuple(map(evaluator, args))
-    if func.startswith("__i") and func != "__iter__": #dir of int, str, etc. don't contain inplace operators
+    if func.startswith("__i") and func not in I_START: #dir of int, str, etc. don't contain inplace operators
         op = getattr(operator, func[2:][:-2]) #i.e. func = __iadd__ -> operator.iadd
         called = op(evaluated, *mapped)
     else:
