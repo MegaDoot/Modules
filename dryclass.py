@@ -29,15 +29,35 @@ W O W
 ISN'T
 THAT
 D          R          Y
-
 You can also add a list for extra arguments (*args) to go with 'extra_a = "name_of_variable"'
 A dictionary can be saved for keyword arguments (**kwargs): 'extra_kw = "name_of_variable"'
 Both are None by default
 
+HOW TO USE 'to_static', 'to_cls' and 'generic'@
+Recommended: look at the code in __name__ == "__main__" section
+'to_static': converts all methods in a class into staticmethods
+'to_cls': converts all methods in a class into classmethods
+'generic': does not affect function/method/class
+Here we see a use for 'generic'. It is the decorator equivalent of '*[]' (where there are no args
+but you need to type something to avoid a syntax error, i.e. '"hello" is speak else *[]')
+(Code Example 2)
+-----------
+    import random
+    decorators = [generic, to_cls, to_static]
+    selected = decorators[random.randrange(0, 3)]
+    @selected
+    class Foo:
+        def bar():
+            pass
+-----------
+
+HOW TO USE 'dunders':
+'dunders(obj)' returns all magic methods from a class/instance - all that are in the format
+\^__[A-Za-z_]+__$\ (note that no dunders contain numbers).
 
 HOW TO USE 'add_method':
 Add a decorator before the function -
-(Code Example 1)
+(Code Example 3)
 -----------
     import dryclass as dc
     @dc.add_methods("__main__.Foo: obj.num", "__add__", "__sub__")
@@ -50,7 +70,7 @@ This gets the class and adds each of the specified magic methods. An unlimited a
 The lambda at the starts specifies which attribute of the class to get.
 -----------
 Here is a usage of the function on the result (wrapper) and the function called on each argument:
-(Code Example 2)
+(Code Example 4)
 -----------
     @dc.add_methods("__main__.Foo: int(obj.num)", "__add__", "__sub__", "__mul__", "__floordiv__", wrapper = "str")
     class Foo:
@@ -60,8 +80,8 @@ Here is a usage of the function on the result (wrapper) and the function called 
 -----------
 Here, the value of num is always a string so it is converted to an integer, the calculations are
 done and the result is converted back into a string, so "5" + "6" would become "11" in this case,
-despite being strings. The equivalent of the code above/code example 2 done normally:
-(Code Example 3)
+despite being strings. The equivalent of the code above/code example 4 done normally:
+(Code Example 5)
 -----------
     class Foo:
         def __init__(self):
@@ -93,7 +113,7 @@ It's important to note that anything defined within the program would not be
 available to the module, hence the need to write '__main__' beforehand. Also,
 each section (made up of data types separated by commas, a colon and a statement)
 is separated by a SEMICOLON and not a comma.
-(Code Example 4)
+(Code Example 6)
 -----------
     @dc.add_methods("__main__.Foo: float(obj.num); float, int: obj", "__add__", "__radd__")
     class Foo:
@@ -101,6 +121,7 @@ is separated by a SEMICOLON and not a comma.
             self.num = 5
     print(repr(Foo() + 1), repr(Foo() + Foo()), repr(3 + Foo()))
 -----------
+
 HOW TO USE 'importer':
 What if you don't want to add '__main__' before all functions you define?
 The 'importer' function allows you to write your own statement, i.e.
@@ -108,7 +129,7 @@ The 'importer' function allows you to write your own statement, i.e.
 'importer("m")' is equivalent to 'import __main__ as m'
 """
 
-__all__ = ("construct", "add_methods", "importer", "BIN_OPERS", "IBIN_OPERS", "to_static", "to_cls")
+__all__ = ("construct", "to_static", "to_cls", "generic", "dunders", "BIN_OPERS", "IBIN_OPERS", "add_methods", "importer")
 
 def construct(args = [], kwargs = [], extra_a = None, extra_kw = None):
     def decorator(cls):
@@ -156,20 +177,27 @@ def construct(args = [], kwargs = [], extra_a = None, extra_kw = None):
         return cls
     return decorator
 
+def edit(cls, function, exclude = tuple()):
+    for func in filter(lambda name: not (name.startswith("__") and name.endswith("__")), dir(cls)):
+##        print(func, type(func))
+        if function not in exclude:
+            setattr(cls, func, function(getattr(cls, func)))
+##        print(func)
+    return cls
 
+def to_static(cls, **kwargs):
+    return edit(cls, staticmethod, **kwargs)
 
-def remove(iterable, name):
-    array = iterable[:]
-    del array[array.index(name)]
-    return array
+def to_cls(cls, **kwargs):
+    return edit(cls, classmethod, **kwargs)
 
-BIN_OPERS = ("__add__", "__div__", "__floordiv__", "__mod__", "__mul__", "__pow__", "__sub__", "__truediv__")
-IBIN_OPERS = ("__iadd__", "__idiv__", "__imod__", "__imul__", "__pow__", "__isub__")
+generic = lambda obj: obj
 
-##IBIN_OPERS = tuple(map(lambda func: "__i" + func[2:], BIN_OPERS))
+def dunders(obj): #Lists all dunder methods of an object
+    return tuple(filter(lambda func: func.startswith("__") and func.endswith("__"), dir(obj)))
 
+@to_static
 class Tkn:
-    @staticmethod
     def split_with(string, delimiter):
         not_quoted = Tkn.out_quotes(string)
         sep_positions = []
@@ -186,7 +214,6 @@ class Tkn:
                 split[-1] += string[i]
         return split
 
-    @staticmethod
     def tokenise(string):
         not_quoted = Tkn.out_quotes(string) #Remove all text in quotation marks and apostrophes
         stripped = "" #Spaces removed
@@ -204,7 +231,6 @@ class Tkn:
             separated[i][0] = list(Tkn.split_with(separated[i][0], ","))
         return separated
 
-    @staticmethod
     def method(multi_key_dict, obj, key):
         type_ = type(obj)
         for k_tuple in multi_key_dict.keys():
@@ -213,7 +239,6 @@ class Tkn:
                 return multi_key_dict[k_tuple]
         raise KeyError("Key '{}' not found".format(key))
 
-    @staticmethod
     def out_quotes(string):
         indexes = [i for i in range(len(string)) if string[i] == '"']
         inside = []
@@ -223,7 +248,6 @@ class Tkn:
         outside = [i for i in range(len(string)) if not i in inside]
         return outside
 
-    @staticmethod
     def unpack(tokens):
             individual = {}
             for i in range(len(tokens)):
@@ -231,15 +255,15 @@ class Tkn:
                     individual[tokens[i][0][x]] = tokens[i][1]
             return individual
 
-    @staticmethod
     def run(dict_, obj):
         for k, v in dict_.items():
             if eval(k) == type(obj):
                 return eval(v)
         raise NameError("Behaviour of type '{}' is not defined".format(type(obj).__name__))
 
-def dunders(obj): #Lists all dunder methods of an object
-    return tuple(filter(lambda func: func.startswith("__") and func.endswith("__"), dir(obj)))
+BIN_OPERS = ("__add__", "__div__", "__floordiv__", "__mod__", "__mul__", "__pow__", "__sub__", "__truediv__")
+IBIN_OPERS = ("__iadd__", "__idiv__", "__imod__", "__imul__", "__pow__", "__isub__")
+##IBIN_OPERS = tuple(map(lambda func: "__i" + func[2:], BIN_OPERS))
 
 def make_func(this, func, evaluator, wrapper, *args):
 ##    print("\nCalled")
@@ -281,28 +305,16 @@ class add_methods(object): #The decorator
                 #Note that 'this' is used to distinguish from 'self' defined in the class
         return cls #Turn the class into the decorated class
 
-def edit(cls, function, exclude = tuple()):
-    for func in filter(lambda name: not (name.startswith("__") and name.endswith("__")), dir(cls)):
-##        print(func, type(func))
-        if function not in exclude:
-            setattr(cls, func, function(getattr(cls, func)))
-##        print(func)
-    return cls
-
-def to_static(cls, **kwargs):
-    return edit(cls, staticmethod, **kwargs)
-
-def to_cls(cls, **kwargs):
-    return edit(cls, classmethod, **kwargs)
-
 if __name__ == "__main__":
+    import random
+
     #For construct
     @construct(args = ("a", "b"), kwargs = (("c", 3), ("d", 4), ("e", 5)), extra_kw = "keywords")
     class Foo:
         def __init__(self):
             print("Initialised")
             print(self.a, self.b, self.c, self.d, self.e)
-            print(self.keywords)
+            print(self.keywords, "\n")
     
     test = Foo(1, 2, 9, e = 10, f = 100)
     
@@ -314,7 +326,7 @@ if __name__ == "__main__":
             self.num = num
             self.array = array
             self.string = string
-    print()
+
     test1 = Derivative("3", [1, 2, 3], "hello")
     test2 = Derivative("10", [1, 3, 3, 7], "hi")
     print(len(test2))
@@ -326,7 +338,9 @@ if __name__ == "__main__":
     test1[0] = 100
     print("After:", list(test1), "\n")
 
-    @to_cls
+    decorators = [generic, to_cls, to_static]
+    selected = decorators[random.randrange(0, 3)]
+    @selected
     class Foo:
         def bar():
             pass
@@ -337,5 +351,9 @@ if __name__ == "__main__":
         print({"function": "staticmethod", "method": "instancemethod"}[type(test3.bar).__name__])
     except TypeError:
         print("classmethod")
+    
+    @generic
+    def hello():
+        print("Hello!")
 else:
     importer()
