@@ -295,7 +295,6 @@ def importer(name = "__main__"):
 
 class add_methods(object): #The decorator
     def __init__(self, syntax, *funcs:str, wrapper = "lambda value: value"):
-        print("Called")
         self.func_dict = Tkn.unpack(Tkn.tokenise(syntax))
 ##        print(self.func_dict)
         self.funcs = funcs
@@ -304,7 +303,6 @@ class add_methods(object): #The decorator
     def __call__(self, cls):
         evaluator = lambda obj: Tkn.run(self.func_dict, obj)
 ##        class Decorated(cls): #Temporary decorated class that contains all of the
-        print("self.wrapper =", self.wrapper)
         for func in self.funcs: #func is a string
 ##            print("Iterated with", func)
             
