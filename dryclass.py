@@ -269,7 +269,7 @@ def from_i(funcs):
 I_START = ("__index__", "__init__", "__instancecheck__", "__int__", "__invert__", "__iter__")
 
 IMATH_OPERS = ("__iadd__", "__ifloordiv__", "__ilshift__", "__imod__", "__imul__", "__ipow__", "__irshift__", "__isub__", "__itruediv__")
-MATH_OPERS = from_i(IBIN_OPERS)
+MATH_OPERS = from_i(IMATH_OPERS)
 EQ_OPERS = ("__eq__", "__ge__", "__le__", "__gt__", "__lt__", "__ne__")
 ITER_OPERS = ("__contains__", "__delitem__", "__delslice__", "__getslice__", "__index__", "__len__", "__setitem__", "__setslice__")
 TYPE_OPERS = ("__float__", "__int__")
