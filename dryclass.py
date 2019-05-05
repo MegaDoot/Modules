@@ -109,7 +109,7 @@ should be applied to each different data type. A string is used over a dictionar
 -More freedom
 -Improved readability and writability
 In the example below, both 'float' and 'int' have the same behaviour so we do
-'float, int: obj' instead of 'float: obj, int: obj' because that would be  W E T
+'float, int: obj' instead of 'float: obj; int: obj' because that would be  W E T
 It's important to note that anything defined within the program would not be
 available to the module, hence the need to write '__main__' beforehand. Also,
 each section (made up of data types separated by commas, a colon and a statement)
