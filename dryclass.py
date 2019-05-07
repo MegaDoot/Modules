@@ -131,7 +131,7 @@ The 'importer' function allows you to write your own statement, i.e.
 """
 import operator
 
-__all__ = ("construct", "to_static", "to_cls", "generic", "dunders", "IMATH_OPERS", "MATH_OPERS", "EQ_OPERS", "ITER_OPERS", "TYPE_OPERS", "COND_OPERS", "ICOND_OPERS", "add_methods", "importer")
+__all__ = ("construct", "to_static", "to_cls", "generic", "dunders", "Opers", "add_methods", "importer")
 
 def construct(args = [], kwargs = [], extra_a = None, extra_kw = None):
     def decorator(cls):
@@ -263,18 +263,21 @@ class Tkn:
                 return eval(v)
         raise NameError("Behaviour of type '{}' is not defined".format(type(obj).__name__))
 
-def from_i(funcs):
-    return tuple(map(lambda func: "__" + func[3:], funcs))
+def insert_letter(funcs, letter):
+    return tuple(map(lambda func: "__" + letter + func[2:], funcs))
 
 I_START = ("__index__", "__init__", "__instancecheck__", "__int__", "__invert__", "__iter__")
 
-IMATH_OPERS = ("__iadd__", "__ifloordiv__", "__ilshift__", "__imod__", "__imul__", "__ipow__", "__irshift__", "__isub__", "__itruediv__")
-MATH_OPERS = from_i(IMATH_OPERS)
-EQ_OPERS = ("__eq__", "__ge__", "__gt__", "__le__", "__lt__", "__ne__")
-ITER_OPERS = ("__contains__", "__delitem__", "__delslice__", "__getitem__", "__getslice__", "__index__", "__len__", "__setitem__", "__setslice__")
-TYPE_OPERS = ("__float__", "__int__", "__str__")
-ICOND_OPERS = ("__iand__", "__ior__", "__ixor__")
-COND_OPERS = from_i(ICOND_OPERS)
+class Opers:
+    MATH = ("__add__", "__floordiv__", "__lshift__", "__mod__", "__mul__", "__pow__", "__rshift__", "__sub__", "__truediv__")
+    IMATH = insert_letter(MATH, "i")
+    RMATH = insert_letter(MATH, "r")
+    EQ = ("__eq__", "__ge__", "__gt__", "__le__", "__lt__", "__ne__")
+    ITER = ("__contains__", "__delitem__", "__delslice__", "__getitem__", "__getslice__", "__index__", "__len__", "__setitem__", "__setslice__")
+    TYPE = ("__float__", "__int__", "__str__")
+    COND = ("__and__", "__or__", "__xor__")
+    ICOND = insert_letter(COND, "i")
+    RCOND = insert_letter(COND, "r")
 
 def make_func(this, func, evaluator, wrapper, *args):
 ##    print("\nCalled")
@@ -335,8 +338,8 @@ if __name__ == "__main__":
     test = Foo(1, 2, 9, e = 10, f = 100)
     
     #For add_methods
-    @add_methods("Derivative: obj.array; int: obj", *ITER_OPERS)
-    @add_methods("Derivative: int(obj.num); int, float: obj", *MATH_OPERS, *IMATH_OPERS, *COND_OPERS, wrapper = "str")
+    @add_methods("Derivative: obj.array; int: obj", *Opers.ITER)
+    @add_methods("Derivative: int(obj.num); int, float: obj", *Opers.MATH, *Opers.IMATH, *Opers.COND, wrapper = "str")
     class Derivative(object):
         def __init__(self, num, array, string):
             self.num = num
