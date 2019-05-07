@@ -270,8 +270,8 @@ I_START = ("__index__", "__init__", "__instancecheck__", "__int__", "__invert__"
 
 IMATH_OPERS = ("__iadd__", "__ifloordiv__", "__ilshift__", "__imod__", "__imul__", "__ipow__", "__irshift__", "__isub__", "__itruediv__")
 MATH_OPERS = from_i(IMATH_OPERS)
-EQ_OPERS = ("__eq__", "__ge__", "__le__", "__gt__", "__lt__", "__ne__")
-ITER_OPERS = ("__contains__", "__delitem__", "__delslice__", "__getslice__", "__index__", "__len__", "__setitem__", "__setslice__")
+EQ_OPERS = ("__eq__", "__ge__", "__gt__", "__le__", "__lt__", "__ne__")
+ITER_OPERS = ("__contains__", "__delitem__", "__delslice__", "__getitem__", "__getslice__", "__index__", "__len__", "__setitem__", "__setslice__")
 TYPE_OPERS = ("__float__", "__int__", "__str__")
 ICOND_OPERS = ("__iand__", "__ior__", "__ixor__")
 COND_OPERS = from_i(ICOND_OPERS)
@@ -335,8 +335,8 @@ if __name__ == "__main__":
     test = Foo(1, 2, 9, e = 10, f = 100)
     
     #For add_methods
-    @add_methods("Derivative: obj.array; int: obj", "__len__", "__iter__", "__getitem__", "__setitem__")
-    @add_methods("Derivative: int(obj.num); int, float: obj", "__add__", "__mul__", wrapper = "str")
+    @add_methods("Derivative: obj.array; int: obj", *ITER_OPERS)
+    @add_methods("Derivative: int(obj.num); int, float: obj", *MATH_OPERS, *IMATH_OPERS, *COND_OPERS, wrapper = "str")
     class Derivative(object):
         def __init__(self, num, array, string):
             self.num = num
@@ -361,7 +361,6 @@ if __name__ == "__main__":
         def bar():
             pass
     test3 = Foo()
-    print(type(test3.bar))
     try:
         Foo.bar()
         print({"function": "staticmethod", "method": "instancemethod"}[type(test3.bar).__name__])
