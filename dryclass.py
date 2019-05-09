@@ -128,10 +128,20 @@ What if you don't want to add '__main__' before all functions you define?
 The 'importer' function allows you to write your own statement, i.e.
 'importer("m")', so you can now write it as m.Foo not __main__.Foo
 'importer("m")' is equivalent to 'import __main__ as m'
+
+HOW TO USE 'Opers':
+This contains several tuples of special methods so that if you want your object to have specific uses, such as an
+iterable or a number, you can easily do '*Opers.ITERS' or '*Opers.MATH'. They are dryclass._Special objects.
+Methods (using Opers.MATH as an example):
+Opers.MATH.f    ->   Normal methods       i.e. __add__
+Opers.MATH.fi   ->   Inplace methods      i.e. __iadd__
+Opers.MATH.fr   ->   Right-side methods   i.e. __radd__
+
+The currently available ones are 'MATH', 'EQ', 'ITER', 'TYPE' and 'COND'
 """
 import operator
 
-__all__ = ("construct", "to_static", "to_cls", "generic", "dunders", "Opers", "add_methods", "importer")
+__all__ = ("construct", "to_static", "to_cls", "generic", "dunders", "add_methods", "importer", "Opers")
 
 def construct(args = [], kwargs = [], extra_a = None, extra_kw = None):
     def decorator(cls):
@@ -179,7 +189,7 @@ def construct(args = [], kwargs = [], extra_a = None, extra_kw = None):
         return cls
     return decorator
 
-def edit(cls, function, exclude = tuple()):
+def _edit(cls, function, exclude = tuple()):
     for func in filter(lambda name: not (name.startswith("__") and name.endswith("__")), dir(cls)):
 ##        print(func, type(func))
         if function not in exclude:
@@ -188,10 +198,10 @@ def edit(cls, function, exclude = tuple()):
     return cls
 
 def to_static(cls, **kwargs):
-    return edit(cls, staticmethod, **kwargs)
+    return _edit(cls, staticmethod, **kwargs)
 
 def to_cls(cls, **kwargs):
-    return edit(cls, classmethod, **kwargs)
+    return _edit(cls, classmethod, **kwargs)
 
 generic = lambda obj: obj
 
@@ -199,9 +209,9 @@ def dunders(obj): #Lists all dunder methods of an object
     return tuple(filter(lambda func: func.startswith("__") and func.endswith("__"), dir(obj)))
 
 @to_static
-class Tkn:
+class _Tkn:
     def split_with(string, delimiter):
-        not_quoted = Tkn.out_quotes(string)
+        not_quoted = _Tkn.out_quotes(string)
         sep_positions = []
 
         for pos in not_quoted:
@@ -217,7 +227,7 @@ class Tkn:
         return split
 
     def tokenise(string):
-        not_quoted = Tkn.out_quotes(string) #Remove all text in quotation marks and apostrophes
+        not_quoted = _Tkn.out_quotes(string) #Remove all text in quotation marks and apostrophes
         stripped = "" #Spaces removed
         for i in range(len(string)):
             if string[i] == " ":
@@ -227,10 +237,10 @@ class Tkn:
                 stripped += string[i]
         string = stripped
 
-        separated = Tkn.split_with(string, ";")
+        separated = _Tkn.split_with(string, ";")
         for i in range(len(separated)):
-            separated[i] = Tkn.split_with(separated[i], ":")
-            separated[i][0] = list(Tkn.split_with(separated[i][0], ","))
+            separated[i] = _Tkn.split_with(separated[i], ":")
+            separated[i][0] = list(_Tkn.split_with(separated[i][0], ","))
         return separated
 
     def method(multi_key_dict, obj, key):
@@ -263,23 +273,7 @@ class Tkn:
                 return eval(v)
         raise NameError("Behaviour of type '{}' is not defined".format(type(obj).__name__))
 
-def insert_letter(funcs, letter):
-    return tuple(map(lambda func: "__" + letter + func[2:], funcs))
-
-I_START = ("__index__", "__init__", "__instancecheck__", "__int__", "__invert__", "__iter__")
-
-class Opers:
-    MATH = ("__add__", "__floordiv__", "__lshift__", "__mod__", "__mul__", "__pow__", "__rshift__", "__sub__", "__truediv__")
-    IMATH = insert_letter(MATH, "i")
-    RMATH = insert_letter(MATH, "r")
-    EQ = ("__eq__", "__ge__", "__gt__", "__le__", "__lt__", "__ne__")
-    ITER = ("__contains__", "__delitem__", "__delslice__", "__getitem__", "__getslice__", "__index__", "__len__", "__setitem__", "__setslice__")
-    TYPE = ("__float__", "__int__", "__str__")
-    COND = ("__and__", "__or__", "__xor__")
-    ICOND = insert_letter(COND, "i")
-    RCOND = insert_letter(COND, "r")
-
-def make_func(this, func, evaluator, wrapper, *args):
+def _make_func(this, func, evaluator, wrapper, *args):
 ##    print("\nCalled")
     evaluated = evaluator(this)
     if evaluated is this: #If unchanged, it finds its own method, resulting in recursion :(
@@ -296,33 +290,62 @@ def make_func(this, func, evaluator, wrapper, *args):
     wrapped = wrapper(called)
     return wrapped
 
-class DunderArgsError(TypeError): #Custom exception
-    pass
-
-class NoSignatureError(ValueError): #Custom exception
-    pass
-
 def importer(name = "__main__"):
     globals()[name] = __import__("__main__")
 
 class add_methods(object): #The decorator
     def __init__(self, syntax, *funcs:str, wrapper = "lambda value: value"):
-        self.func_dict = Tkn.unpack(Tkn.tokenise(syntax))
+        self.func_dict = _Tkn.unpack(_Tkn.tokenise(syntax))
 ##        print(self.func_dict)
         self.funcs = funcs
         self.wrapper = wrapper
     
     def __call__(self, cls):
-        evaluator = lambda obj: Tkn.run(self.func_dict, obj)
+        evaluator = lambda obj: _Tkn.run(self.func_dict, obj)
 ##        class Decorated(cls): #Temporary decorated class that contains all of the
         for func in self.funcs: #func is a string
 ##            print("Iterated with", func)
             
-            code = lambda this, *args, func = func, wrapper = self.wrapper: make_func(this, func, evaluator, wrapper, *args)
+            code = lambda this, *args, func = func, wrapper = self.wrapper: _make_func(this, func, evaluator, wrapper, *args)
             setattr(cls, func, code)
                 #i.e. self.num.__add__(other.num)
                 #Note that 'this' is used to distinguish from 'self' defined in the class
         return cls #Turn the class into the decorated class
+
+def _insert_letter(funcs, letter):
+    return tuple(map(lambda func: "__" + letter + func[2:], funcs))
+
+I_START = ("__index__", "__init__", "__instancecheck__", "__int__", "__invert__", "__iter__")
+
+class _Special:
+    def __init__(self, *normals):
+        self.f = normals
+        for char in "ir":
+            setattr(self, "f" + char, _insert_letter(normals, char))
+    
+    def __repr__(self):
+        return f"_Special({str(self.all)[1:-1]})"
+
+    def __iter__(self):
+        for el in self.funcs:
+            yield el
+
+    @property
+    def funcs(self): #Will update if any of the values are changed
+        return self.f + self.fi + self.fr
+    
+
+class Opers:
+    MATH = _Special("__add__", "__floordiv__", "__lshift__", "__mod__", "__mul__", "__pow__", "__rshift__", "__sub__", "__truediv__")
+    
+    EQ = _Special("__eq__", "__ge__", "__gt__", "__le__", "__lt__", "__ne__")
+    
+    ITER = _Special("__contains__", "__delitem__", "__delslice__", "__getitem__", "__getslice__", "__index__", "__len__", "__setitem__", "__setslice__")
+    
+    TYPE = _Special("__float__", "__int__", "__str__")
+    
+    COND = _Special("__and__", "__or__", "__xor__")
+
 
 if __name__ == "__main__":
     import random
@@ -339,7 +362,7 @@ if __name__ == "__main__":
     
     #For add_methods
     @add_methods("Derivative: obj.array; int: obj", *Opers.ITER)
-    @add_methods("Derivative: int(obj.num); int, float: obj", *Opers.MATH, *Opers.IMATH, *Opers.COND, wrapper = "str")
+    @add_methods("Derivative: int(obj.num); int, float: obj", *Opers.MATH, *Opers.COND, wrapper = "str")
     class Derivative(object):
         def __init__(self, num, array, string):
             self.num = num
