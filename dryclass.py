@@ -140,21 +140,30 @@ Opers.MATH.fr   ->   Right-side methods   i.e. __radd__
 The currently available ones are 'MATH', 'EQ', 'ITER', 'TYPE' and 'COND'
 """
 import operator
+import inspect
 
 __all__ = ("construct", "to_static", "to_cls", "generic", "dunders", "add_methods", "importer", "Opers")
 
+def _has_init(cls):
+    try:
+        inspect.getsource(cls.__init__) #Get the source code of the function
+        return True #If no error is raised, source code has been found
+    except TypeError: #Will raise this error if no Python code found (when initialised implicitly by Python and not the programmer)
+        return False
+
 def construct(args = [], kwargs = [], extra_a = None, extra_kw = None):
-    def decorator(cls):
-        star = []
-        starstar = {}
-        if hasattr(cls, "__init__"):
-            func = cls.__init__
+    def decorator(cls): #Take class as input, edit class and then output
+        star = [] #Unlimited args, such as *args
+        starstar = {} #Unlimited kwargs, such as **kwargs
+        if _has_init(cls): #hasattr(cls, "__init__") doesn't work as all classes have them automatically
+            func = cls.__init__ #Set the function to run later. This will cause a recursion error if done later as it gets edited
         else:
-            func = lambda self: None
-        def init_wrapper(*a, **kw):
-            self = a[0]
+            func = lambda self: None #Generic function
+        def init_wrapper(*a, **kw): #The actual arguments are processed later
+            self = a[0] #'self' is still entered as a parameter
             a = a[1:] #Save and remove 'self' argument
             if len(a) < len(args) or (extra_a is None and len(a) > len(args) + len(kwargs)):
+                #If too few arguments or if extra arguments added without defining a place to store *args
                 raise TypeError("Got {} args, expected {} to {}".format(len(a), len(args), len(args) + len(kwargs)))
             remove_kw = 0 #Ignore all that were entered as args
             for i in range(len(a)): #arguments
@@ -165,74 +174,73 @@ def construct(args = [], kwargs = [], extra_a = None, extra_kw = None):
                         else: #Add to *
                             star.append(a[i])
                     else: #Must be a normal arg that represents a default argument
-                        set_val = kwargs[1 + i - len(a)][0]
-                        remove_kw += 1
-                        setattr(cls, set_val, a[i])
+                        set_val = kwargs[1 + i - len(a)][0] #Which variable is currently in use
+                        remove_kw += 1 #i.e. f(a, b = 0, c = 1) would accept call f(4, 5). When processing kwargs, 'b' will be ignored.
+                        #The '+=1' tells the process to ignore anything before that number when processing kwargs to avoid being counted twice
+                        setattr(cls, set_val, a[i]) #Set the variable to the value entered
                 else:
-                    setattr(cls, args[i], a[i])
+                    setattr(cls, args[i], a[i]) #Set the value in args tuple to this
             for k, v in kwargs[remove_kw:]: #All kwargs entered in the keyword and argument format
-                setattr(cls, k, v)
-            for k, v in kw.items():
-                if k in dict(kwargs).keys():
+                setattr(cls, k, v) #i.e f=10 in kwargs would set the class' 'f' to '10'
+            for k, v in kw.items(): #Iterate through each key in the dictionary
+                if k in dict(kwargs).keys(): #If the k is in variables that have default values, it's not a **, so don't put it there
                     setattr(cls, k, v)
                 else:
-                    if extra_kw is None:
+                    if extra_kw is None: #If the output for ** has not yet been defined
                         raise TypeError("Unexpected keyword argument '{}'".format(k))
-                    starstar[k] = v
+                    starstar[k] = v #Add this key to the values if it has been defined
                     
-            if extra_a is not None:
-                setattr(cls, extra_a, star)
-            if extra_kw is not None:
+            if extra_a is not None: #If * pipe has been already defined
+                setattr(cls, extra_a, tuple(star))
+            if extra_kw is not None: #If the ** pipe has already been defined
                 setattr(cls, extra_kw, starstar)
             func(self)
-        setattr(cls, "__init__", init_wrapper)
+        setattr(cls, "__init__", init_wrapper) #Set the __init__ for the class to a new class that is identical but with extra variables and parameters
         return cls
     return decorator
 
-def _edit(cls, function, exclude = tuple()):
-    for func in filter(lambda name: not (name.startswith("__") and name.endswith("__")), dir(cls)):
-##        print(func, type(func))
-        if function not in exclude:
-            setattr(cls, func, function(getattr(cls, func)))
-##        print(func)
-    return cls
+def _edit(cls, function, exclude = tuple()): #Change all instances of a function to a decorated one
+    for func in filter(lambda name: not (name.startswith("__") and name.endswith("__")), dir(cls)): #All non-dunder methods
+        if function not in exclude: #If not specifically excluded
+            setattr(cls, func, function(getattr(cls, func))) #Add a 'function' (f) to pre-existing 'func' (g) so g(x) becomes fg(x)
+    return cls #Return newly edited class
 
-def to_static(cls, **kwargs):
+def to_static(cls, **kwargs): #Add the 'staticmethod' decorator to all non-dunder functions
     return _edit(cls, staticmethod, **kwargs)
 
-def to_cls(cls, **kwargs):
+def to_cls(cls, **kwargs): #Add the 'classmethod' decorator to all non-dunder functions
     return _edit(cls, classmethod, **kwargs)
 
-generic = lambda obj: obj
+generic = lambda obj: obj #Do nothing
 
 def dunders(obj): #Lists all dunder methods of an object
     return tuple(filter(lambda func: func.startswith("__") and func.endswith("__"), dir(obj)))
 
-@to_static
-class _Tkn:
-    def split_with(string, delimiter):
-        not_quoted = _Tkn.out_quotes(string)
+@to_static #Using my parts of the module to make other parts dryer. That's allowed, right?
+class _Tkn: #Deals with all tokenisation of a string
+    def split_with(string, delimiter): #Like .split() but has special behaviour for text in quotes
+        not_quoted = _Tkn.out_quotes(string) #Indexes not in quotation makes
         sep_positions = []
 
         for pos in not_quoted:
-            if string[pos] == delimiter:
+            if string[pos] == delimiter: #Finds all positions places to split
                 sep_positions.append(pos)
 
         split = [""]
         for i in range(len(string)):
-            if i in sep_positions:
-                split.append("")
+            if i in sep_positions: #If it reaches the delimiter start adding to new string
+                split.append("") #Always adds to end of last string so this means that a new part is defined
             else: #Skips semicolons
-                split[-1] += string[i]
+                split[-1] += string[i] #Add to end of last string of list
         return split
 
     def tokenise(string):
         not_quoted = _Tkn.out_quotes(string) #Remove all text in quotation marks and apostrophes
         stripped = "" #Spaces removed
         for i in range(len(string)):
-            if string[i] == " ":
-                if not i in not_quoted:
-                    stripped += string[i]
+            if string[i] == " ": #If a space
+                if not i in not_quoted: #If a whitespace, can be removed if it's not in a string
+                    stripped += string[i] #Add this character to stripped version of string
             else:
                 stripped += string[i]
         string = stripped
@@ -243,29 +251,23 @@ class _Tkn:
             separated[i][0] = list(_Tkn.split_with(separated[i][0], ","))
         return separated
 
-    def method(multi_key_dict, obj, key):
-        type_ = type(obj)
-        for k_tuple in multi_key_dict.keys():
-            evaluated = tuple(map(eval, k_tuple))
-            if type_ in evaluated:
-                return multi_key_dict[k_tuple]
-        raise KeyError("Key '{}' not found".format(key))
 
-    def out_quotes(string):
+    def out_quotes(string): #All positions not in quotes (will not split anything in quotes)
         indexes = [i for i in range(len(string)) if string[i] == '"']
         inside = []
-        iterate = tuple(range(0, len(indexes), 2))
+        iterate = tuple(range(0, len(indexes), 2)) #i.e. (0, 2, 4, 6)
         for i in iterate:
-            inside += tuple(range(indexes[i], indexes[i + 1] + 1))
-        outside = [i for i in range(len(string)) if not i in inside]
+            inside += tuple(range(indexes[i], indexes[i + 1] + 1)) #range(5) goes 0 to 4, hence the '] + 1'
+        outside = [i for i in range(len(string)) if not i in inside] #Negates inside
         return outside
 
-    def unpack(tokens):
-            individual = {}
-            for i in range(len(tokens)):
-                for x in range(len(tokens[i][0])):
-                    individual[tokens[i][0][x]] = tokens[i][1]
-            return individual
+    def unpack(tokens): #Takes a list of tokens, i.e. '[[["float", "int"], "obj+1"],]' and makes a dictionary of string keys
+        individual = {}
+        for i in range(len(tokens)): #Go through each set of tokens, such as '[["float", "int"], "obj+1"]'
+            apply = tokens[i][1] #i.e. '"obj+1"'
+            for x in range(len(tokens[i][0])): #Go through the list containing data types, i.e. '["float", "int"]'
+                individual[tokens[i][0][x]] = apply #Set each data type to its own key with the value as the apply function
+        return individual #i.e. {"float": "obj+1", "int": "obj+1"}
 
     def run(dict_, obj):
         for k, v in dict_.items():
@@ -278,6 +280,7 @@ def _make_func(this, func, evaluator, wrapper, *args):
     evaluated = evaluator(this)
     if evaluated is this: #If unchanged, it finds its own method, resulting in recursion :(
         raise RecursionError("Statement entered results in infinite recursion - statement type of class to be decorated must not equal 'obj'")
+    #i.e. if class is called 'Foo', typing "Foo: obj" will result in it calling itself again as it hasn't yet defined it
     wrapper = eval(wrapper)
     mapped = tuple(map(evaluator, args))
     if func.startswith("__i") and func not in I_START: #dir of int, str, etc. don't contain inplace operators
