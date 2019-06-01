@@ -39,7 +39,7 @@ Recommended: look at the code in __name__ == "__main__" section
 'to_cls': converts all methods in a class into classmethods
 'generic': does not affect function/method/class
 Here we see a use for 'generic'. It is the decorator equivalent of '*[]' (where there are no args
-but you need to type something to avoid a syntax error, i.e. '"hello" is speak else *[]')
+but you need to type something to avoid a syntax error, i.e. '"hello" if speak else *[]')
 (Code Example 2)
 -----------
     import random
@@ -53,7 +53,7 @@ but you need to type something to avoid a syntax error, i.e. '"hello" is speak e
 
 HOW TO USE 'dunders':
 'dunders(obj)' returns all magic methods from a class/instance - all that are in the format
-\^__[A-Za-z_]+__$\ (note that no dunders contain numbers).
+r"^__[A-Za-z_]+__$" (note that no dunders contain numbers).
 
 HOW TO USE 'add_method':
 Add a decorator before the function -
