@@ -7,8 +7,8 @@ Consider yourselves honoured that I took the time to add augmented assigment - '
 import dryclass as dc
 dc.importer("m")
 behaviour = "m.Base: m.to_ten(obj.num, obj.base); float, int: int(obj)"
-@dc.add_methods(behaviour, *dc.MATH_OPERS, *dc.EQ_OPERS)
-@dc.add_methods(behaviour, *dc.IMATH_OPERS, wrapper = "lambda value: m.Base(int(value))")
+@dc.add_methods(behaviour, *dc.Opers.MATH.fr, *dc.Opers.MATH.f, *dc.Opers.EQ)
+@dc.add_methods(behaviour, *dc.Opers.MATH.fi, wrapper = "lambda value: m.Base(int(value))")
 class Base:
     def __init__(self,num,base = 10): #ACCEPTS 1 OR 2 ARGUMENTS, base defaults to 10
         self.num = str(num)
