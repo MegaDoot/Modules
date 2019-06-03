@@ -20,7 +20,8 @@ Avoids doing something like this:
 BECAUSE THAT WOULD BE  W E T
 Instead, you can do:
 -----------
-    @construct(args = ("genus", "species", "legs", "mass", "speed"), kwargs = [("eyes", 2)])
+    import dryclass as dc
+    @dc.construct(args = ("genus", "species", "legs", "mass", "speed"), kwargs = [("eyes", 2)])
     class Foo:
         def __init__(self):
             print("Initialised")
