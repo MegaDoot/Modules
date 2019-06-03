@@ -144,25 +144,27 @@ The currently available ones are 'MATH', 'EQ', 'ITER', 'TYPE' and 'COND'
 import operator
 import inspect
 
-__all__ = ("construct", "to_static", "to_cls", "generic", "dunders","add_methods","importer", "Opers")
+__all__ = ("construct", "to_static", "to_cls", "generic", "dunders", "add_methods", "importer", "Opers")
 
 
 def _has_init(cls):
     try:
-        inspect.getsource(cls.__init__) # Get the source code of the function
-        return True # If no error is raised, source code has been found
-    except TypeError: # Will raise this error if no Python code found (when initialised implicitly by Python and not the programmer)
+        inspect.getsource(cls.__init__)  # Get the source code of the function
+        return True  # If no error is raised, source code has been found
+    except TypeError:  # Will raise this error if no Python code found (when initialised implicitly by Python and not the programmer)
         return False
 
 
-def construct(args = [], kwargs = [], extra_a = None, extra_kw = None):
+def construct(args=[], kwargs=[], extra_a=None, extra_kw=None):
     def decorator(cls):  # Take class as input, edit class and then output
         star = []  # Unlimited args, such as *args
         starstar = {}  # Unlimited kwargs, such as **kwargs
         if _has_init(cls):  # hasattr(cls, "__init__") doesn't work as all classes have them automatically
             func = cls.__init__  # Set the function to run later. This will cause a recursion error if done later as it gets edited
         else:
-            func = lambda self: None # Generic function
+            def func(self):
+                return
+
         def init_wrapper(*a, **kw): # The actual arguments are processed later
             self = a[0]  # self' is still entered as a parameter
             a = a[1:]  # Save and remove 'self' argument
