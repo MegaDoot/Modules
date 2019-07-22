@@ -125,6 +125,9 @@ is separated by a SEMICOLON and not a comma.
             self.num = 5
     print(repr(Foo() + 1), repr(Foo() + Foo()), repr(3 + Foo()))
 -----------
+The parameter 'default' says what will happen if a data type is not recognised/not specified and is set to 'obj' by default. Therefore if the behaviour of a type is 'obj', it is redundant: 'dc.add_methods("__main__.Foo: obj.num; int, float: obj")'
+could be replaced with dc.add_methods("__main.Foo: obj.num", default="obj")
+-----------
 HOW TO USE 'importer':
 What if you don't want to add '__main__' before all functions you define?
 The 'importer' function allows you to write your own statement, i.e.
@@ -144,8 +147,13 @@ The currently available ones are 'MATH', 'EQ', 'ITER', 'TYPE' and 'COND'
 import operator
 import inspect
 
-__all__ = ("construct", "to_static", "to_cls", "generic", "dunders", "add_methods", "importer", "Opers")
+__all__ = ("_debug", "construct", "to_static", "to_cls", "generic", "dunders", "add_methods", "importer", "Opers")
 
+_debug = False
+
+def _puts(*args, **kwargs):
+    if _debug:
+        print(*args, **kwargs)
 
 def _has_init(cls):
     try:
@@ -281,40 +289,52 @@ class _Tkn:  # Deals with all tokenisation of a string
                 individual[tokens[i][0][x]] = apply  # Set each data type to its own key with the value as the apply function
         return individual  # i.e. {"float": "obj+1", "int": "obj+1"}
 
-    def run(dict_, obj):
+    def run(dict_, obj, default):
+        _puts("obj:", obj)
         for k, v in dict_.items():
             if eval(k) == type(obj):
                 return eval(v)
-        raise NameError("Behaviour of type '{}' is not defined".format(type(obj).__name__))
+        return eval(default)
+##        else: #If it only runs if a behaviour is defined
+##            raise NameError("Behaviour of type '{}' is not defined.".format(type(obj).__name__))
 
 def _make_func(this, func, evaluator, wrapper, *args):
+    _puts("Wrapper:", wrapper)
     evaluated = evaluator(this)
+    _puts("evaluated input as:", evaluated)
     if evaluated is this:  # If unchanged, it finds its own method, resulting in recursion :(
         raise RecursionError("Statement entered results in infinite recursion - statement type of class to be decorated must not equal 'obj'")
     # i.e. if class is called 'Foo', typing "Foo: obj" will result in it calling itself again as it hasn't yet defined it
-    wrapper = eval(wrapper)
-    mapped = tuple(map(evaluator, args))
-    if func.startswith("__i") and func not in I_START:  # dir of int, str, etc. don't contain inplace operators
-        op = getattr(operator, func[2:][:-2])  # i.e. func = __iadd__ -> operator.iadd
-        called = op(evaluated, *mapped)
+    wrapper = eval(wrapper) #Turns it from a string of code to a function
+    mapped = list(map(evaluator, args)) #Evaluate the other arguments
+    if func.startswith("__r") and not func in R_START:
+        op_func = getattr(operator, func[3:-2])
+    elif func in dir(operator):
+        op_func = getattr(operator, func[2:-2])
     else:
-        to_call = getattr(evaluated, func)
-        called = to_call(*mapped)
+        op_func = None
+    if op_func is not None:
+        called = op_func(evaluated, *mapped)
+    else:
+        called = getattr(evaluated, func)(*mapped)
+    _puts("Called:", called)
     wrapped = wrapper(called)
+    _puts("Wrapped:", wrapped)
     return wrapped
 
 def importer(name = "__main__"):
     globals()[name] = __import__("__main__")
 
 class add_methods(object):  # The decorator
-    def __init__(self, syntax, *funcs:str, wrapper = "lambda value: value"):
+    def __init__(self, syntax, *funcs:str, wrapper="lambda value: value", default="obj"):
         self.func_dict = _Tkn.unpack(_Tkn.tokenise(syntax))
         self.funcs = funcs
         self.wrapper = wrapper
+        self.default = default
 
     def __call__(self, cls):
         def evaluator(obj):
-            return _Tkn.run(self.func_dict, obj)
+            return _Tkn.run(self.func_dict, obj, self.default)
         for func in self.funcs: # func is a string
             def code(this, *args, func=func, wrapper=self.wrapper):
                 return _make_func(this, func, evaluator, wrapper, *args)
@@ -330,6 +350,7 @@ def _insert_letter(funcs, letter):
 
 I_START = ("__index__", "__init__", "__instancecheck__", "__int__", "__invert__", "__iter__")
 
+R_START = ("__reversed__", "__rshift__")
 
 class _Special:
     def __init__(self, *normals):
